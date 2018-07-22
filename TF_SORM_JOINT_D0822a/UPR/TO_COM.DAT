@@ -1,0 +1,218 @@
+;┌──────────────────────────────────────────────────────────────────────────┐
+;│                    переменные для работы СОМ порта                       │
+;└──────────────────────────────────────────────────────────────────────────┘
+
+OLD_KLV         DB  0FFH
+
+LENGTH_DOP      DD      0,50756,46911,166965,166965,98023,0,0
+LENGTH_DOPM     DW      0,2,6, 6, 3
+WIN_DOP		DW      0,8,10,16,22,25,0
+LENGTH_DOP_SN   DD      166967 ; длина прошивки для супер-новой платы ИКМ (2.0)
+LENGTH_DOP_SNM  DW      6;166967 ; длина прошивки для супер-новой платы ИКМ (2.0)
+WIN_DOP_SN      DW      2,8,14,20,26,32 ; окна доп.инф.для супер-новой платы ИКМ (2.0)
+;WIN_DOP_SN      DW      6,12,18,24,30,36 ; окна доп.инф.для супер-новой платы ИКМ (2.0)
+Cur_Altera_Chip DB      0
+Alt_Cfg_Errors  DB      0
+FG_FLASH    	DW	0	;0-4MB FLASH
+;******* For New Altera (v2.0) **********************************************
+ALT_HDLC_NEW    EQU     05051h
+ALT_LOCK_RESET  EQU     0505Dh
+ALT_IRQ_WRITE   EQU     05057h
+ALT_IRQ_READ    EQU     05059h
+ALT_CONFIG_DATA EQU     05005h
+ALT_CONFIG_CTRL EQU     05006h
+;*********************** В БАЗЕ ДАННЫХ ****************************************
+; ДЛЯ 2 мб ФЛЕШ
+WIN_CONF        DW      0,2,4           ; окна конфигурации
+WIN_ETIC        DW      0,3,5,95,127    ; первые 2 конфигурация - потом черный список
+WIN_DOP_GLB     DW      80, 112         ; номера - укзатели на окна доп инфы
+WIN_ETICP       DW      47,63           ; этикетки программы
+WIN_PROC        DW      32,48           ; окна программы
+
+; ДЛЯ 4 мб ФЛЕШ авто настраивается при загрузке
+;WIN_CONF        DW      0,64,66         ; окна конфигурации
+;WIN_ETIC        DW      0,65,67,95,127  ; первые 2 конфигурация - потом черный список
+;WIN_ETICP       DW      111,127         ; этикетки программы
+;WIN_PROC        DW      96,112          ; окна программы
+;WIN_DOP_GLB     DW      80, 112         ; номера - укзатели на окна доп инфы
+Flash_size      db      0               ; размер флеша в мегабайтах
+Memory_size     db      0               ; размер памяти в мегабайтах
+
+INDEX_FLASH     EQU     32H
+ADR_ID          EQU     7FFEH           ; место расположение этикетки
+ADR_IDP         EQU     7FF2H           ; место расположение этикетки программы
+SAVE_FLASH	DB	0
+; ************************** КОНСТАНТЫ ДЛЯ СОМ-ПОРТА
+ADR_PORT        DW      3F8h,2F8h
+MASK_PORT       DB      00010000b,00001000b
+VECT_PORT       DW      30h,2Ch
+
+; ************************** НАСТРОЙКИ ДЛЯ СОМ-ПОРТА
+OLD_VEC_COM     DD      0
+OLD_MASK0       DB      0                       ;Рабочая переменная
+COM_MASK        DB      00010000b               ;Маска прерывания СОМ-порта default=00010000b
+PORT            DW      3F8h                    ;Адрес СОМ-порта       ;
+PORT_           DW      3F8h                    ;Адрес СОМ-порта       ;
+                                                ; регистр передачи данных
+PORT_2          DW      3FDh                    ;Адрес СОМ-порта + 2   ; но 2 ли тут?
+                                                ; read - регистр идентификации прерываний
+                                                ; write - регистр управления FIFO
+PORT_5          DW      3FDh                    ;Адрес СОМ-порта + 5
+                                                ; read - регистр состояния линии
+                                                ; исп для определения пустоты PORT_
+PORT_6          DW      3FEh                    ;Адрес СОМ-порта + 6
+                                                ; read - регистр состояния модема
+COM_VECT        DW      30h                     ;Вектор прерывания СОМ-порта
+; *******************   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+GOOD_KEY        DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 0
+                DB      0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1  ; 1
+                DB      0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0  ; 2
+                DB      0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1  ; 3
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0  ; 4
+                DB      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 5
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 6
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 7
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 8
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 9
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; A
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0  ; B
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; C
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; D
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; E
+                DB      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; F
+
+; ************************** КОНФИГУРАЦИЯ ДЛЯ СОМ-ПОРТА
+SINCHRO         DB      0FFh,0,0FFh,0           ;Синхропосылка(в обратном пор.)
+N_COM           DW      2                       ;Номер СОМ-порта ( 1 или 2 )
+SPEED           DB      1                       ;Скорость передачи COM(дел-ль)  9600
+T_O_OCOM        DD      500                     ;Тайм-аут передачи в COM
+T_O_ICOM        DD      5000                    ;Тайм-аут приема из COM ; default = 5000
+                                                ; 500 явно не хватает для передачи экрана
+PLACE           DB      0                       ;Носитель (0-HD, 1-FD, *-FLASH)   ???
+TYP_BLOCK       DB      2                       ;Тип блока
+
+; ************************** РАБОЧИЕ ПЕРЕМЕННЫЕ ДЛЯ СОМ-ПОРТА
+REG_T_COM       DB      2                       ;Режим передачи СОМ-порта   Default = 2
+                                                ; 0 - передача синхропосылки
+                                                ; 1 - передача экрана
+                                                ; 2 - передача приостановлена
+                                                ; 3 - конфигурация
+POINT_RWS       DW      0                       ;Указатель чтения/записи экрана
+TIME_OB_C       DD      0                       ;Время передачи в COM-порт
+TIME_IB_C       DD      0                       ;Время приема из COM-порта
+COUNT_OUT_SINCH DB      2                       ;Счетчики передачи синхро в СОМ
+POINT_C_OUT     DW      0                       ;Указатель в буфере передачи
+LEN_C_OUT       DW      0                       ;Количество байт для передачи
+POINT_C_IN      DW      0                       ;Указатель в буфере приема
+LEN_C_IN        DW      0                       ;Количество байт для приема
+BUF_C_OUT       DB      800 DUP(0)              ;Буфер передачи
+BUF_C_IN        DB      800 DUP(0)              ;Буфер приема
+FLAG_SAVE       DB      0                       ;Флаг приема изменений
+REG_CONF        DB      0                       ;Режим 0 - прием команды
+                                                ;      1 - прием сектора
+MAX_BL_CONF     DW      0                       ;Максимальный номер сектора
+FLAG_C_BEG      DB      0                       ;Флаг входа в конфигурацию
+FLAG_C_EX       DB      0                       ;Флаг выхода из конфигурации
+INP_SEC         DW      0                       ;Номер принимаемого сектора
+
+; ************************** РАБОЧИЕ ПЕРЕМЕННЫЕ
+FLASH_OK        DB      0       ;Признак ошибки чтения/записи FLASH
+CURR_CONF       DW      0       ;Номер текущей копии конфигурации ( * 2 )
+;--------- new 4_3_4 !!!!
+
+CUR_LSTWRPTR      DD    0                           ; укзатель записи в неактивном сегменте
+;WIN_DOP_GLB       DW    80, 112                        ; номера - укзатели на окна доп инфы
+CURR_DOP          DW    0                           ;НОМЕР текущей доп инфы
+
+FG_BLCK_LST_OK    DB  3                           ; 0 бит - на этой голове
+                                                  ; 1 бит - на резервной
+
+; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ;
+; Данные для работы с флеш
+; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ;
+
+_FLASH1_SEG     =       SS:SEG_FLASH                            ; Сегмент FLASH1
+_FLASH2_SEG     =       SS:SEG_FLASH_OLD                        ; Сегмент FLASH2
+
+; Идентификаторы режимов конфигурации
+_NOP_ID	        =	0FFh
+_PROGR_ID	=	000h
+_CONFG_ID       =	001h
+_DOPIN_ID       =	002h
+_ANI_ID         =       003h
+_BUNCH_ID       =       004h
+
+_fls_win_size   =       8000h   ; размер окна флеша
+
+_CFG_SZ         =       OFFSET END_KONF_FLASH
+; Временное хранение указателя flash
+Flash_var              DB      00h
+
+; Конфигурация разметки
+;                               PROG    CONF    BlackList
+; Текущая копия
+FLCurActCopyB           DB      80h,    80h,    80h             ; поставим - неопределено
+; Абсолютные адреса
+FLFirstCopyAddrD        DD      300000h,200000h,280000h;010000h         ; первая копия (№0)
+FLSecndCopyAddrD        DD      380000h,210000h,280000h;090000h         ; вторая копия (№1)
+; Другие настройки
+FLSizeInByteD           DD      80000h, 10000h, 80000h          ; Размер в байтах для передачи
+FLLablOffsetD           DD      7FFF2h, 0FFFEh, 7FFFEh          ; смещение этикетки относительно начала
+FLActvCopyLabelW        DW      0EFBDh, 0BDEFh, 0BDEFh          ; Метка
+
+; Текущее состояние модуля
+FLCurTaskID		DB	_NOP_ID				; Ничего не делаем
+FLCurEDIPOS		DD	?				; Текущее положение
+
+; Указатель на драйвер
+FL_READ_FUNC		DW	OFFSET	ELAN400_READ_FLC
+FL_WRITE_FUNC		DW	OFFSET	ELAN400_WRITE_FLC
+FL_ERASE_FUNC		DW	OFFSET	ELAN400_ERASE_FLC
+FL_WRITE_FUNC_X         DW      OFFSET  ELAN400_WRITE_FLC_X
+;FL_WRITE_FUNC_New       DW      OFFSET  ELAN400_WRITE_FLC_NEW
+
+; Временные переменные
+FLTmpLabel		DW	?				; место, куда будет скопирована этикетка
+
+;;;HDD!!!
+                ; --- файлы, используемые программой, и их параметры
+_FILE_CFG_       DB     'tf_sorm.cfg', 5 dup(0)
+_FILE_PRG_NAME   DB     'PROG.EXE', 5 dup(0)
+_FILE_CFG_NAME   DB     'TF_SORM.CFG', 5 dup(0)
+_FILE_BLST_NAME  DB     'TF_SORM.BLS', 5 dup(0)
+_FILE_ANI_NAME   DB     'TF_SORM.ANI', 5 dup(0)
+_FILE_BUNCH_NAME DB     'TF_SORM.BNC', 5 dup(0)
+
+_FILE_PRG_SIZE   =      512 * 1024      ;;;!!!
+_FILE_CFG_SIZE   =      512 * 12         ;;;!!!
+_FILE_BLST_SIZE  =      80000h  ; = 512*1024   ;;;!!!
+_FILE_DOP_SIZE   =      80000h  ; = 512*1024   ;;;!!!
+_FILE_ANI_SIZE   =      20a000h         ;;;!!!
+_FILE_BUNCH_SIZE =      1053276
+
+_FILE_PRG_ID    DD      _PROGR_ID
+_FILE_GFG_ID    DD      _CONFG_ID
+_FILE_BLST_ID   DD      _DOPIN_ID
+_FILE_ANI_ID    DD      _ANI_ID
+_FILE_BUNCH_ID  DD      _BUNCH_ID
+
+public _FILE_BLST_NAME
+public _FILE_BLST_SIZE
+public _FILE_BLST_ID
+
+public _FILE_ANI_NAME
+public _FILE_ANI_SIZE
+public _FILE_ANI_ID
+
+public _FILE_BUNCH_NAME
+public _FILE_BUNCH_SIZE
+public _FILE_BUNCH_ID
+
+                ; --- рабочие переменные обмена с ПУМой
+HDDCurTaskID    DB      _NOP_ID ; с каким видом информации работаем: прог, конф или чёрный
+HDDSectDone     DW      0       ; кол-во секторов принятых или переданных после старта задания
+HDDSectCount    DW      0       ; общее число секторов в задании
+HDDCurOper      DB      0       ; 0 - чтение, 1 - запись
+HDDCurFileID    DD      0       ; идентификатор файла, связанного с заданием
+HDDCurTaskDone  DB      0       ; 1 - всё записано
+

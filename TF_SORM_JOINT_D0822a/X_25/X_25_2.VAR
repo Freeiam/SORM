@@ -1,0 +1,135 @@
+
+MOD_128         EQU     7FH
+MOD_7           EQU     7               ;ŒŽ„“‹œ ……„€—ˆ\ˆ…Œ€
+MOD_3           EQU     3
+OBSH_IND        EQU     00010000B       ;Ž™ˆ‰ ˆ„ˆŠ€’Ž-‚Ž‹ƒŽƒ€„ 24/03/2000
+;OBSH_IND        EQU     00001010B       ;Ž™ˆ‰ ˆ„ˆŠ€’Ž
+IND_KOM         EQU     10000000B       ;Š€„-‘ŽŽ™…ˆ…
+IND_OTV         EQU     11000000B       ;Š€„_Ž’‚…’
+OKNO            EQU     2
+N2              EQU     3
+EQU_UMN         EQU     1021H
+;ADR_VIU  DB     0
+POSLED          DW      2 DUP(0)        ;…‘‹…„ˆ‰ ˆ˜…„˜ˆ‰ ŽŠ…’
+PERVIY          DW      2 DUP(0)        ;…‚›‰ € 3 “Ž‚…œ
+
+SOST_L3         DW      2 DUP(0)
+ADD_BUF_L3      DW      2 DUP(0)        ;‘Œ…™…ˆ… ‚ “”…… Ž’ ŽŒ…€ €Š…’€
+FG_L3           DW      2 DUP(0)        ;
+                                        ;0-‡€…’ ……„€—ˆ ‘ 3 “Ž‚Ÿ
+
+FSNT_3          DW      2 DUP(0)
+FSNF_3          DW      2 DUP(0)
+FSNL_3          DW      2 DUP(0)        ;ŽŒ… €Š…’€ ‚ “”……
+P_R_LEV3        DW      2 DUP(0)
+OLD_P_R         DW      2 DUP(0)
+FG_TIM          DW      2 DUP(0)
+BUF_FIFO        DB      8     DUP(0)
+FG_TXT          DW      2 DUP(0)
+                                ;0-“„€‹…€Ÿ ‘’ŽŽ€ … ƒŽ’Ž‚€
+                                ;1-……„€’œ REJ
+                                ;2-……„€’œ RR  F=1
+                                ;3-……„€’œ RNR F=1
+                                ;4-“”… ……„€—ˆ “‘’
+                                ;5-’€ ‘’ŽŽ€ … ƒŽ’Ž‚€
+FG_TXT2         DW      2 DUP(0)
+                                ;0-ˆ„ˆŠ€’Ž REJ     -0-ŠŽŒ€„€/1-Ž’‚…’
+                                ;1-”‹€ƒ REJ
+                                ;2-ˆ„ˆŠ€’Ž RR
+                                ;3-”‹€ƒ RR
+                                ;4-ˆ„ˆŠ€’Ž RNR
+                                ;5-”‹€ƒ RNR
+                                ;6-“”… ˆ…Œ€ … “‘’
+                                ;7-“”… ……„€—ˆ Ž‹Ž
+                                ;8-Ž†ˆ„€ˆ… Ž„’‚…†„…ˆŸ
+FG_TXT3         DW      2 DUP(0)
+                                        ;0-……„€’œ Ž„’‚…†„…ˆ… …‘’€’€
+                                        ;1-……„€’œ Ž„’‚…†„…ˆ… ‘Ž‘€
+                                        ;2--\- ‘Ž‘
+                                        ;3-‡‚…Ž … €Ž’€…’
+                                        ;4-‚›„€…’‘Ÿ CRC
+                                        ;5-‚›„€’œ RR
+FG_INI3         DW      0       ;0-……„€’œ RESTART
+                                ;1-Ž†ˆ„€ˆ… Ž„’‚…†„…ˆŸ …‘’€’€
+FG_LEV3         DW      0
+                                ;2-Ž‚’Ž €Š…’€
+TXT_PER         DW      2 DUP(0)        ;…“Œ…Ž‚€€Ÿ ŠŽŒ€„€
+PER_POVT        DW      2 DUP(0)
+FLAG_F          DW      2 DUP(0)
+SCH_N2          DW      2 DUP(0)
+FLAG_M          DW      2 DUP(0)
+KANAL_1         DW      1               ;ŽŒ… …‚ŽƒŽ Š€€‹€-ŠŽŒ€„›
+KANAL_2         DW      2               ;ŽŒ… ‚’ŽŽƒŽ Š€€‹€-‘ŽŽ™…ˆŸ
+BT_SOST         DW      2 DUP(0)        ;”‹€ƒ ‘Ž‘’ŽŸˆŸ
+                                        ;0-‘Ž‘’ŽŸˆ… ‘Ž‘€
+TIME_T1         DW      2 DUP(0)
+FG_TL3          DW      2 DUP(0)        ;0-’€‰Œ… Ž†ˆ„€ˆŸ Ž„’‚…†„…ˆŸ
+POROG_TL3       EQU     1000
+OLD_TIME_L3     DW      2 DUP(0)
+POROG_TL3_2     EQU     3000
+OLD_TIME_L3_2   DW      2 DUP(0)
+POROG_TL3_3     EQU     3000;1000
+OLD_TIME_L3_3   DW      2 DUP(0)
+POROG_T1        EQU     01000
+BUF_LEV3        DB      2000H   DUP(0)
+BUF_L3          DB      200H    DUP(0)
+TAB_COM_L3      DB      1,1,0,0,0,1,0,0,0,1
+                DB      125     DUP(0)
+
+BUF_OKT3                        DB      9       ;RR
+                                DB      0
+                                DB      10      ;RNR
+                                DB      0
+                                DB      0       ;REJ
+                                DB      0       ;‚•Ž„Ÿ™ˆ‰ ‚›‡Ž‚
+                                DB      0       ;6-‘Ž…„ˆ…ˆ… … “‘’€Ž‚‹…Ž
+                                DB      0       ;
+                                DB      0
+                                DB      0       ;9-ˆ„ˆŠ€–ˆŸ Ž’ŽŸ
+                                DB      0
+                                DB      0       ;11-Ž„’‚…†„…ˆ… Ž’ŽŸ
+                                DB      0
+                                DB      5       ;13-ˆ„ˆŠ€–ˆŸ ‘Ž‘€
+                                DB      0
+                                DB      6       ;15-Ž„’‚…†„…ˆ… ‘Ž‘€
+                                DB      0
+                                DB      0       ;17-…›‚€ˆ…
+                                DB      0
+                                DB      0       ;19-Ž„’‚…†„…ˆ… …›‚€ˆŸ
+                                DB      105     DUP(0)
+                                DB      2       ;125-ˆ„ˆŠ€–ˆŸ …‘’€’€
+                                DB      0
+                                DB      3       ;127-Ž„’‚…†„…ˆ… …‘’€’€
+                ;20H-ˆŸ’ DM
+                ;21H-ˆŸ’ UA
+;                ;22H-ˆŸ’ SABM
+                ;23H-ˆŸ’ SABME
+                ;24H-ˆŸ’ DISC
+                ;25H-ˆŸ’ FRMR
+                ;26H-.......DM …‡ ”‹€ƒ€
+                ;27H-.......UA …‡ ”‹€ƒ€
+                ;2FH-.......'I' WITH FLAG
+                ;30H-.......RNR
+                ;31H-.......RR
+                ;51H-TIME-T1-OK
+;L3_POCK
+                ;1-€‡š…„ˆ…ˆ…
+                ;2-…’ Ž„’‚…†„…ˆŸ DISC
+                ;3-…’ Ž„’‚…†„…ˆŸ SABME
+                ;4-…’ Ž„’‚…†„…ˆŸ ŽŠ…’€
+;TIME_T1M        DW      2 DUP(0)
+TIME_T2M        DW      2 DUP(0)
+TIME_T3M        DW      2 DUP(0)
+TIME_T2         DW      2 DUP(0);’€‰Œ… T2
+TIME_T3         DW      2 DUP(0)
+POROG_T2        EQU     5000
+POROG_T3        DW      0
+BUF_L3_L2       DB      2 DUP(8 DUP(80H     DUP(1)))
+BUF_VVOD        DB      1024    DUP(0)  ;“”… ‚‚Ž„€ ‘ “Ž‚Ÿ 1
+
+; ------
+X25_Err         DW      2 DUP(0)
+
+X25_Reset       DW      2 DUP(0)
+X25_Reset_State DW      2 DUP(0)
+X25_Reset_Time  DW      2 DUP(0)

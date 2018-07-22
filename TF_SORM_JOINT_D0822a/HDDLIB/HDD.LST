@@ -1,0 +1,2934 @@
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 1
+hdd.ASM
+HDD
+
+
+      1					 TITLE	 HDD
+      2					 .486P
+      3					 LOCALS	$$
+      4					 PAGE	 60,130
+      5					 ;
+      6					 ;===============================================================================
+      7					 ; Инициализация файловой системы
+      8					 ;
+      9					 ; InitHDD PROC	   C FAR
+     10					 ;===============================================================================
+     11
+     12					 ;===============================================================================
+     13					 ; Открыть существующий	файл
+     14					 ;
+     15					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+     16					 ; Выход без ошибки:
+     17					 ; CF =	0, EAX = идентификатор файла
+     18					 ; Выход с ошибкой:
+     19					 ; CF =	1, EAX - не определён
+     20					 ;
+     21					 ; FileOpen	   PROC	   C FAR
+     22					 ;===============================================================================
+     23
+     24					 ;===============================================================================
+     25					 ; Удалить файл
+     26					 ;
+     27					 ; EAX = идентификатор файла
+     28					 ; Выход без ошибки:
+     29					 ; CF =	0
+     30					 ; Выход с ошибкой:
+     31					 ; CF =	1
+     32					 ;
+     33					 ; FileErase	   PROC	   C FAR
+     34					 ;===============================================================================
+     35
+     36					 ;===============================================================================
+     37					 ; Создать и открыть файл
+     38					 ;
+     39					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+     40					 ; Выход без ошибки:
+     41					 ; CF =	0, EAX = идентификатор файла
+     42					 ; Выход с ошибкой:
+     43					 ; CF =	1, EAX - не определён
+     44					 ;
+     45					 ; FileCreate	   PROC	   C FAR
+     46					 ;===============================================================================
+     47
+     48					 ;===============================================================================
+     49					 ; Создать и открыть файл заданного размера
+     50					 ;
+     51					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+     52					 ; В ECX размер	файла
+     53					 ; Выход без ошибки:
+     54					 ; CF =	0, EAX = идентификатор файла
+     55					 ; Выход с ошибкой:
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 2
+hdd.ASM
+HDD
+
+
+     56					 ; CF =	1, EAX - не определён
+     57					 ;
+     58					 ; FileCreateSize	   PROC	   C FAR
+     59					 ;===============================================================================
+     60
+     61					 ;===============================================================================
+     62					 ; Создать и открыть пустой файл (заполненный нулями) заданного	размера
+     63					 ;
+     64					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+     65					 ; В ECX размер	файла
+     66					 ; Выход без ошибки:
+     67					 ; CF =	0, EAX = идентификатор файла
+     68					 ; Выход с ошибкой:
+     69					 ; CF =	1, EAX - не определён
+     70					 ;
+     71					 ; FileCreateEmpty	   PROC	   C FAR
+     72					 ;===============================================================================
+     73
+     74					 ;===============================================================================
+     75					 ; Закрыть файл
+     76					 ;
+     77					 ; EAX - идентификатор файла
+     78					 ; Выход без ошибки:
+     79					 ; CF =	0
+     80					 ; Выход с ошибкой:
+     81					 ; CF =	1
+     82					 ;
+     83					 ; FileClose	   PROC	   C FAR
+     84					 ;===============================================================================
+     85
+     86					 ;===============================================================================
+     87					 ; Получить размер файла
+     88					 ;
+     89					 ; EAX - идентификатор файла
+     90					 ; Выход без ошибки:
+     91					 ; CF =	0
+     92					 ; ECX - размер	файла
+     93					 ; Выход с ошибкой:
+     94					 ; CF =	1
+     95					 ;
+     96					 ; FileSize	   PROC	   C FAR
+     97					 ;===============================================================================
+     98
+     99					 ;===============================================================================
+    100					 ; Установить указатель	чтения/записи в	файле
+    101					 ;
+    102					 ; EAX - идентификатор файла
+    103					 ; ECX - расстояние от начала файла
+    104					 ; Выход без ошибки:
+    105					 ; CF =	0
+    106					 ; Выход с ошибкой:
+    107					 ; CF =	1
+    108					 ;
+    109					 ; FileSeek	   PROC	   C FAR
+    110					 ;===============================================================================
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 3
+hdd.ASM
+HDD
+
+
+    111
+    112					 ;===============================================================================
+    113					 ; Получить указатель чтения/записи в файле
+    114					 ;
+    115					 ; EAX - идентификатор файла
+    116					 ; Выход без ошибки:
+    117					 ; CF =	0
+    118					 ; ECX - указатель чтения/записи в файле
+    119					 ; Выход с ошибкой:
+    120					 ; CF =	1
+    121					 ;
+    122					 ; FilePos	   PROC	   C FAR
+    123					 ;===============================================================================
+    124
+    125					 ;===============================================================================
+    126					 ; Чтение из файла
+    127					 ;
+    128					 ; EAX - идентификатор файла
+    129					 ; DS:EDX - указатель на буфер приёма данных
+    130					 ; ECX - число байт
+    131					 ; Выход без ошибки:
+    132					 ; CF =	0
+    133					 ; Выход с ошибкой:
+    134					 ; CF =	1
+    135					 ;
+    136					 ; FileRead	   PROC	   C FAR
+    137					 ;===============================================================================
+    138
+    139					 ;===============================================================================
+    140					 ; Запись в файл
+    141					 ;
+    142					 ; EAX - идентификатор файла
+    143					 ; DS:EDX - указатель на буфер с данными
+    144					 ; ECX - число байт
+    145					 ; Выход без ошибки:
+    146					 ; CF =	0
+    147					 ; Выход с ошибкой:
+    148					 ; CF =	1
+    149					 ;
+    150					 ; FileWrite	   PROC	   C FAR
+    151					 ;===============================================================================
+    152
+    153					 ;===============================================================================
+    154					 ; Удалить файл	по имени
+    155					 ;
+    156					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+    157					 ; Выход без ошибки:
+    158					 ; CF =	0
+    159					 ; Выход с ошибкой:
+    160					 ; CF =	1
+    161					 ;
+    162					 ; FileEraseName   PROC	   C FAR
+    163					 ;===============================================================================
+    164
+    165					 ;===============================================================================
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 4
+hdd.ASM
+HDD
+
+
+    166					 ; Переименовать файл
+    167					 ;
+    168					 ; EAX = идентификатор файла
+    169					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+    170					 ; Выход без ошибки:
+    171					 ; CF =	0
+    172					 ; Выход с ошибкой:
+    173					 ; CF =	1
+    174					 ;
+    175					 ; FileRename	   PROC	   C FAR
+    176					 ;===============================================================================
+    177
+    178					 ;
+    179
+    180		  =01F0			 HDDBasePortAddr equ	 01F0h
+    181		  =0000			 HDDNumber	 equ	 0
+    182		  =0020			 RootDirSize	 equ	 32
+    183		  =0200			 RootDirItems	 equ	 512
+    184		  =0008			 MaxFiles	 equ	 8
+    185
+    186	00000000			 TDirItem	 struc
+    187	00000000  01*(0B*(??))			 DIR_Name		 db	 11 DUP	(?)	 ;Короткое имя файла
+    188	0000000B  01*(??)			 DIR_Attr		 db	 ?		 ;Атрибуты файла
+    189	0000000C  01*(??)			 DIR_NTRes		 db	 ?		 ;Зарезервировано для (должно	 +
+    190					 содержать значение 0)
+    191	0000000D  01*(??)			 DIR_CrtTimeTenth	 db	 ?		 ;поле,	уточняющее время создания+
+    192					 файла (десятки	миллисекунд)
+    193												 ;Значение поля	может находиться +
+    194					 в пределах от 0 до 199
+    195	0000000E  01*(????)			 DIR_CrtTime		 dw	 ?		 ;Время	создания файла
+    196	00000010  01*(????)			 DIR_CrtDate		 dw	 ?		 ;Дата создания	файла
+    197	00000012  01*(????)			 DIR_LstAccDate		 dw	 ?		 ;Дата последнего обращения к	 +
+    198					 файлу
+    199	00000014  01*(????)			 DIR_FstClusHI		 dw	 ?		 ;Старшее слово	номера первого	 +
+    200					 кластера файла
+    201												 ;В системах FAT12 и FAT16 поле	 +
+    202					 зарезервировано и содержит 0
+    203	00000016  01*(????)			 DIR_WrtTime		 dw	 ?		 ;Время	выполнения поледней	 +
+    204					 операции записи в файл
+    205	00000018  01*(????)			 DIR_WrtDate		 dw	 ?		 ;Дата выполнения поледней	 +
+    206					 операции записи в файл
+    207	0000001A  01*(????)			 DIR_FstClusLO		 dw	 ?		 ;Младшее слово	номера первого	 +
+    208					 кластера файла
+    209	0000001C  01*(????????)			 DIR_FileSize		 dd	 ?		 ;Размер файла в байтах		 +
+    210					 (32-разрядное число)
+    211	00000020			 TDirItem	 ends
+    212
+    213					 ;
+    214	00000000			 TFileRec	 struc
+    215	00000000  01*(????)			 DirItem		 dw	 ?		 ;Номер	элемента каталога
+    216	00000002  01*(????)			 FileRezerv		 dw	 ?		 ;Резерв
+    217	00000004  01*(????????)			 FilePosition		 dd	 ?		 ;Указатель чтения/записи в файле
+    218	00000008			 TFileRec	 ends
+    219
+    220					 ;	 ***** Адресация в SEG_HDD_HEAP	*****
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 5
+hdd.ASM
+HDD
+
+
+    221		  =0000			 VarFSTop = 0 ;Инициализация вершины "статической кучи"
+    222					 ;
+    223					 VAR_FS	 macro	 VarName,VarSize
+    224						 VarName = VarFSTop
+    225						 VarFSTop = VarFSTop+VarSIze
+    226					 endm
+    227
+    228					 VAR_FS	 ATAFeatures,1
+1   229		  =0000				 ATAFeatures = VarFSTop
+1   230		  =0001				 VarFSTop = VarFSTop+1
+    231					 VAR_FS	 ATASectorCount,1;
+1   232		  =0001				 ATASectorCount	= VarFSTop
+1   233		  =0002				 VarFSTop = VarFSTop+1
+    234					 VAR_FS	 ATASectorNumber,1;
+1   235		  =0002				 ATASectorNumber = VarFSTop
+1   236		  =0003				 VarFSTop = VarFSTop+1
+    237					 VAR_FS	 ATACylinder,2;
+1   238		  =0003				 ATACylinder = VarFSTop
+1   239		  =0005				 VarFSTop = VarFSTop+2
+    240					 VAR_FS	 ATAHead,1;
+1   241		  =0005				 ATAHead = VarFSTop
+1   242		  =0006				 VarFSTop = VarFSTop+1
+    243					 VAR_FS	 ATAAdressMode,1;
+1   244		  =0006				 ATAAdressMode = VarFSTop
+1   245		  =0007				 VarFSTop = VarFSTop+1
+    246					 VAR_FS	 ATACommand,1
+1   247		  =0007				 ATACommand = VarFSTop
+1   248		  =0008				 VarFSTop = VarFSTop+1
+    249					 VAR_FS	 HDDErrorCode,1;
+1   250		  =0008				 HDDErrorCode =	VarFSTop
+1   251		  =0009				 VarFSTop = VarFSTop+1
+    252					 VAR_FS	 SectorAddress,4;
+1   253		  =0009				 SectorAddress = VarFSTop
+1   254		  =000D				 VarFSTop = VarFSTop+4
+    255					 VAR_FS	 SectorDataBuffer,512
+1   256		  =000D				 SectorDataBuffer = VarFSTop
+1   257		  =020D				 VarFSTop = VarFSTop+512
+    258					 VAR_FS	 PriDOS_StartSector,4;
+1   259		  =020D				 PriDOS_StartSector = VarFSTop
+1   260		  =0211				 VarFSTop = VarFSTop+4
+    261					 VAR_FS	 SectorsInCluster,2;
+1   262		  =0211				 SectorsInCluster = VarFSTop
+1   263		  =0213				 VarFSTop = VarFSTop+2
+    264					 VAR_FS	 RSects,4;
+1   265		  =0213				 RSects	= VarFSTop
+1   266		  =0217				 VarFSTop = VarFSTop+4
+    267					 VAR_FS	 FATsOnDisk,2;
+1   268		  =0217				 FATsOnDisk = VarFSTop
+1   269		  =0219				 VarFSTop = VarFSTop+2
+    270					 VAR_FS	 FATSize,2;
+1   271		  =0219				 FATSize = VarFSTop
+1   272		  =021B				 VarFSTop = VarFSTop+2
+    273					 VAR_FS	 HiddenSectors,4;
+1   274		  =021B				 HiddenSectors = VarFSTop
+1   275		  =021F				 VarFSTop = VarFSTop+4
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 6
+hdd.ASM
+HDD
+
+
+    276					 VAR_FS	 FATStartSect,4;
+1   277		  =021F				 FATStartSect =	VarFSTop
+1   278		  =0223				 VarFSTop = VarFSTop+4
+    279					 VAR_FS	 RootDirStartSect,4
+1   280		  =0223				 RootDirStartSect = VarFSTop
+1   281		  =0227				 VarFSTop = VarFSTop+4
+    282					 VAR_FS	 RootDirBuffer,512*32
+1   283		  =0227				 RootDirBuffer = VarFSTop
+1   284		  =4227				 VarFSTop = VarFSTop+512*32
+    285					 VAR_FS	 FATBuffer,128*1024;
+1   286		  =4227				 FATBuffer = VarFSTop
+1   287		  =00024227			 VarFSTop = VarFSTop+128*1024
+    288					 VAR_FS	 TmpDirName,11
+1   289		  =00024227			 TmpDirName = VarFSTop
+1   290		  =00024232			 VarFSTop = VarFSTop+11
+    291					 VAR_FS	 Files,MaxFiles*8
+1   292		  =00024232			 Files = VarFSTop
+1   293		  =00024272			 VarFSTop = VarFSTop+MaxFiles*8
+    294
+    295					 ;
+    296					 ;STACK_SEG	 SEGMENT PARA STACK USE16 'STACK'
+    297					 EXTRN		 SEG_HDD_HEAP:WORD
+    298					 ;STACK_SEG	 ENDS
+    299
+    300					 ;===============================================================================
+    301					 ; Сегмент кода	файловой системы
+    302					 ;===============================================================================
+    303
+    304	    0000			 HDD_CODE	 SEGMENT PARA PUBLIC USE16 'CODE'
+    305							 ASSUME	CS:HDD_CODE,DS:NOTHING,SS:NOTHING;STACK_SEG
+    306
+    307					 public		 HDD_SIZE
+    308
+    309	    0000			 SendCommandToHDD	 PROC	     NEAR
+    310	    0000  66| 60			 pushad
+    311	    0002  65: 80 3E 0006 01		 cmp	 BYTE PTR GS:[ATAAdressMode],1
+    312	    0008  77 7B				 ja	 $$Error2
+    313					 ;	  mov	  bx,[ChannelNumber]
+    314					 ;	  cmp	  bx,1
+    315					 ;	  jb	  $$Error3
+    316					 ;	  cmp	  bx,4
+    317					 ;	  ja	  $$Error3
+    318					 ;	  dec	  bx
+    319					 ;	  shl	  bx,1
+    320					 ;	  mov	  ax,[BX+StStandardHDDBases]
+    321	    000A  BA 01F0			 mov	 dx,HDDBasePortAddr
+    322	    000D  81 C2	0206			 add	 dx,0206h
+    323	    0011  B0 0A				 mov	 al,1010b
+    324	    0013  EE				 out	 dx,al
+    325	    0014  BA 01F7			 mov	 dx,HDDBasePortAddr+7
+    326	    0017			 $$WaitNotBSY:
+    327	    0017  EC				 in	 al,dx
+    328	    0018  A8 80				 test	 al,80h
+    329	    001A  75 FB				 jnz	 $$WaitNotBSY
+    330
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 7
+hdd.ASM
+HDD
+
+
+    331	    001C  BA 01F6			 mov	 dx,HDDBasePortAddr+6
+    332	    001F  B0 00				 mov	 al,HDDNumber
+    333	    0021  C0 E0	04			 shl	 al,4
+    334	    0024  0C A0				 or	 al,10100000b
+    335	    0026  EE				 out	 dx,al
+    336	    0027  42				 inc	 dx
+    337
+    338	    0028			 $$WaitHDReady:
+    339	    0028  EC				 in	 al,dx
+    340	    0029  A8 80				 test	 al,80h
+    341	    002B  75 FB				 jnz	 $$WaitHDReady
+    342	    002D  A8 40				 test	 al,40h
+    343	    002F  74 F7				 jz	 $$WaitHDReady
+    344
+    345	    0031  BA 01F1			 mov	 dx,HDDBasePortAddr+1
+    346	    0034  65: A0 0000			 mov	 al,GS:[ATAFeatures]
+    347	    0038  EE				 out	 dx,al
+    348	    0039  42				 inc	 dx
+    349	    003A  65: A0 0001			 mov	 al,GS:[ATASectorCount]
+    350	    003E  EE				 out	 dx,al
+    351	    003F  42				 inc	 dx
+    352	    0040  65: A0 0002			 mov	 al,GS:[ATASectorNumber]
+    353	    0044  EE				 out	 dx,al
+    354	    0045  42				 inc	 dx
+    355	    0046  65: A1 0003			 mov	 ax,GS:[ATACylinder]
+    356	    004A  EE				 out	 dx,al
+    357	    004B  42				 inc	 dx
+    358	    004C  8A C4				 mov	 al,ah
+    359	    004E  EE				 out	 dx,al
+    360	    004F  42				 inc	 dx
+    361	    0050  B0 00				 mov	 al,HDDNumber
+    362	    0052  C0 E0	04			 shl	 al,4
+    363	    0055  65: 80 3E 0005 0F		 cmp	 BYTE PTR GS:[ATAHead],0Fh
+    364	    005B  77 40				 ja	 $$Error5
+    365	    005D  65: 0A 06 0005		 or	 al,GS:[ATAHead]
+    366	    0062  0C A0				 or	 al,10100000b
+    367	    0064  65: 8A 26 0006		 mov	 ah,GS:[ATAAdressMode]
+    368	    0069  C0 E4	06			 shl	 ah,6
+    369	    006C  0A C4				 or	 al,ah
+    370	    006E  EE				 out	 dx,al
+    371	    006F  42				 inc	 dx
+    372	    0070  65: A0 0007			 mov	 al,GS:[ATACommand]
+    373	    0074  EE				 out	 dx,al
+    374	    0075  65: C6 06 0008 00		 mov	 BYTE PTR GS:[HDDErrorCode],0
+    375	    007B  EB 26				 jmp	 SHORT $$End
+    376	    007D			 $$Error1:
+    377	    007D  65: C6 06 0008 01		 mov	 BYTE PTR GS:[HDDErrorCode],1
+    378	    0083  EB 1E				 jmp	 SHORT $$End
+    379	    0085			 $$Error2:
+    380	    0085  65: C6 06 0008 02		 mov	 BYTE PTR GS:[HDDErrorCode],2
+    381	    008B  EB 16				 jmp	 SHORT $$End
+    382	    008D			 $$Error3:
+    383	    008D  65: C6 06 0008 03		 mov	 BYTE PTR GS:[HDDErrorCode],3
+    384	    0093  EB 0E				 jmp	 SHORT $$End
+    385	    0095			 $$Error4:
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 8
+hdd.ASM
+HDD
+
+
+    386	    0095  65: C6 06 0008 04		 mov	 BYTE PTR GS:[HDDErrorCode],4
+    387	    009B  EB 06				 jmp	 SHORT $$End
+    388	    009D			 $$Error5:
+    389	    009D  65: C6 06 0008 05		 mov	 BYTE PTR GS:[HDDErrorCode],5
+    390
+    391	    00A3			 $$End:
+    392	    00A3  66| 61			 popad
+    393	    00A5  C3				 ret
+    394	    00A6			 SendCommandToHDD	 ENDP
+    395
+    396					 ;
+    397	    00A6			 ReadHDDSector	 PROC	 NEAR
+    398	    00A6  66| 60			 pushad
+    399	    00A8  65: C6 06 0006 01		 mov	 BYTE PTR GS:[ATAAdressMode],1
+    400	    00AE  65: C6 06 0000 00		 mov	 BYTE PTR GS:[ATAFeatures],0
+    401	    00B4  65: C6 06 0001 01		 mov	 BYTE PTR GS:[ATASectorCount],1
+    402	    00BA  66| 65: A1 0009		 mov	 eax,GS:SectorAddress
+    403	    00BF  66| 65: A3 0002		 mov	 GS:[ATASectorNumber],eax
+    404	    00C4  65: C6 06 0007 20		 mov	 BYTE PTR GS:[ATACommand],20h
+    405	    00CA  E8 FF33			 call	 SendCommandToHDD
+    406	    00CD  65: 80 3E 0008 00		 cmp	 BYTE PTR GS:[HDDErrorCode],0
+    407	    00D3  75 2F				 jne	 $$End
+    408
+    409	    00D5  BA 01F7			 mov	 dx,HDDBasePortAddr+7
+    410	    00D8			 $$WaitCompleet:
+    411	    00D8  EC				 in	 al,dx
+    412	    00D9  A8 80				 test	 al,80h
+    413	    00DB  75 FB				 jnz	 $$WaitCompleet
+    414	    00DD  A8 08				 test	 al,08h
+    415	    00DF  74 F7				 jz	 $$WaitCompleet
+    416
+    417	    00E1  06				 push	 ES
+    418	    00E2  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    419	    00E7  66| BF 0000000D		 mov	 edi,SectorDataBuffer
+    420	    00ED  BA 01F0			 mov	 dx,HDDBasePortAddr
+    421	    00F0  66| B9 00000100		 mov	 ecx,256
+    422	    00F6  67				 db	 67h
+    423	    00F7  F3> 6D			 rep	 insw
+    424	    00F9  07				 pop	 ES
+    425	    00FA  EB 08				 jmp	 $$End
+    426	    00FC			 $$Error1:
+    427	    00FC  65: C6 06 0008 01		 mov	 BYTE PTR GS:[HDDErrorCode],1
+    428	    0102  EB 00				 jmp	 SHORT $$End
+    429	    0104			 $$End:
+    430	    0104  66| 61			 popad
+    431	    0106  C3				 ret
+    432	    0107			 ReadHDDSector	 ENDP
+    433
+    434					 ;
+    435	    0107			 WriteHDDSector	  PROC	  NEAR
+    436	    0107  66| 60			 pushad
+    437	    0109  65: C6 06 0006 01		 mov	 BYTE PTR GS:[ATAAdressMode],1
+    438	    010F  65: C6 06 0000 00		 mov	 BYTE PTR GS:[ATAFeatures],0
+    439	    0115  65: C6 06 0001 01		 mov	 BYTE PTR GS:[ATASectorCount],1
+    440	    011B  66| 65: A1 0009		 mov	 eax,GS:SectorAddress
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 9
+hdd.ASM
+HDD
+
+
+    441	    0120  66| 65: A3 0002		 mov	 GS:[ATASectorNumber],eax
+    442	    0125  65: C6 06 0007 30		 mov	 BYTE PTR GS:[ATACommand],30h
+    443	    012B  E8 FED2			 call	 SendCommandToHDD
+    444	    012E  65: 80 3E 0008 00		 cmp	 BYTE PTR GS:[HDDErrorCode],0
+    445	    0134  75 2F				 jne	 $$End
+    446
+    447	    0136  BA 01F7			 mov	 dx,HDDBasePortAddr+7
+    448	    0139			 $$WaitCompleet:
+    449	    0139  EC				 in	 al,dx
+    450	    013A  A8 80				 test	 al,80h
+    451	    013C  75 FB				 jnz	 $$WaitCompleet
+    452	    013E  A8 08				 test	 al,08h
+    453	    0140  74 F7				 jz	 $$WaitCompleet
+    454
+    455	    0142  1E				 push	 DS
+    456	    0143  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+    457	    0148  66| BE 0000000D		 mov	 esi,SectorDataBuffer
+    458	    014E  BA 01F0			 mov	 dx,HDDBasePortAddr
+    459	    0151  66| B9 00000100		 mov	 ecx,256
+    460	    0157  67				 db	 67h
+    461	    0158  F3> 6F			 rep	 outsw
+    462	    015A  1F				 pop	 DS
+    463	    015B  EB 08				 jmp	 $$End
+    464	    015D			 $$Error1:
+    465	    015D  65: C6 06 0008 01		 mov	 BYTE PTR GS:[HDDErrorCode],1
+    466	    0163  EB 00				 jmp	 SHORT $$End
+    467	    0165			 $$End:
+    468	    0165  66| 61			 popad
+    469	    0167  C3				 ret
+    470	    0168			 WriteHDDSector	  ENDP
+    471
+    472					 ; DS:ESI - Buffer
+    473	    0168			 WriteHDDSectorBuf	 PROC	 NEAR
+    474	    0168  66| 60			 pushad
+    475	    016A  65: C6 06 0006 01		 mov	 BYTE PTR GS:[ATAAdressMode],1
+    476	    0170  65: C6 06 0000 00		 mov	 BYTE PTR GS:[ATAFeatures],0
+    477	    0176  65: C6 06 0001 01		 mov	 BYTE PTR GS:[ATASectorCount],1
+    478	    017C  66| 65: A1 0009		 mov	 eax,GS:SectorAddress
+    479	    0181  66| 65: A3 0002		 mov	 GS:[ATASectorNumber],eax
+    480	    0186  65: C6 06 0007 30		 mov	 BYTE PTR GS:[ATACommand],30h
+    481	    018C  E8 FE71			 call	 SendCommandToHDD
+    482	    018F  65: 80 3E 0008 00		 cmp	 BYTE PTR GS:[HDDErrorCode],0
+    483	    0195  75 22				 jne	 $$End
+    484
+    485	    0197  BA 01F7			 mov	 dx,HDDBasePortAddr+7
+    486	    019A			 $$WaitCompleet:
+    487	    019A  EC				 in	 al,dx
+    488	    019B  A8 80				 test	 al,80h
+    489	    019D  75 FB				 jnz	 $$WaitCompleet
+    490	    019F  A8 08				 test	 al,08h
+    491	    01A1  74 F7				 jz	 $$WaitCompleet
+    492
+    493	    01A3  BA 01F0			 mov	 dx,HDDBasePortAddr
+    494	    01A6  66| B9 00000100		 mov	 ecx,256
+    495	    01AC  67				 db	 67h
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 10
+hdd.ASM
+HDD
+
+
+    496	    01AD  F3> 6F			 rep	 outsw
+    497	    01AF  EB 08				 jmp	 $$End
+    498	    01B1			 $$Error1:
+    499	    01B1  65: C6 06 0008 01		 mov	 BYTE PTR GS:[HDDErrorCode],1
+    500	    01B7  EB 00				 jmp	 SHORT $$End
+    501	    01B9			 $$End:
+    502	    01B9  66| 61			 popad
+    503	    01BB  C3				 ret
+    504	    01BC			 WriteHDDSectorBuf	 ENDP
+    505					 ;
+    506					 ;
+    507	    01BC			 ReadHDD_ID	 PROC	   NEAR
+    508	    01BC  66| 60			 pushad
+    509	    01BE  65: C6 06 0006 00		 mov	 BYTE PTR GS:[ATAAdressMode],0
+    510	    01C4  65: C6 06 0000 00		 mov	 BYTE PTR GS:[ATAFeatures],0
+    511	    01CA  65: C6 06 0005 00		 mov	 BYTE PTR GS:[ATAHead],0
+    512	    01D0  65: C6 06 0007 EC		 mov	 BYTE PTR GS:[ATACommand],0ECh
+    513	    01D6  E8 FE27			 call	 SendCommandToHDD
+    514	    01D9  65: 80 3E 0008 00		 cmp	 BYTE PTR GS:[HDDErrorCode],0
+    515	    01DF  75 39				 jne	 $$End
+    516
+    517	    01E1  BA 01F7			 mov	 dx,HDDBasePortAddr+7
+    518	    01E4			 $$WaitCompleet:
+    519	    01E4  EC				 in	 al,dx
+    520	    01E5  A8 80				 test	 al,80h
+    521	    01E7  75 FB				 jnz	 $$WaitCompleet
+    522	    01E9  A8 01				 test	 al,1
+    523	    01EB  75 27				 jnz	 $$Error6
+    524	    01ED  A8 08				 test	 al,08h
+    525	    01EF  74 F3				 jz	 $$WaitCompleet
+    526
+    527	    01F1  06				 push	 es
+    528	    01F2  36: 8E 06 0000e		 mov	 es,SS:SEG_HDD_HEAP
+    529	    01F7  66| BF 0000000D		 mov	 edi,SectorDataBuffer
+    530	    01FD  BA 01F0			 mov	 dx,HDDBasePortAddr
+    531	    0200  66| B9 00000100		 mov	 ecx,256
+    532	    0206  67				 db	 67h
+    533	    0207  F3> 6D			 rep	 insw
+    534	    0209  07				 pop	 es
+    535	    020A  EB 0E				 jmp	 SHORT $$End
+    536
+    537	    020C			 $$Error1:
+    538	    020C  65: C6 06 0008 01		 mov	 BYTE PTR GS:[HDDErrorCode],1
+    539	    0212  EB 06				 jmp	 SHORT $$End
+    540	    0214			 $$Error6:
+    541	    0214  65: C6 06 0008 06		 mov	 BYTE PTR GS:[HDDErrorCode],6
+    542
+    543	    021A			 $$End:
+    544	    021A  66| 61			 popad
+    545	    021C  C3				 ret
+    546	    021D			 ReadHDD_ID	 ENDP
+    547
+    548					 ;
+    549	    021D			 Mount	 PROC	 C NEAR
+    550						 uses	 eax,ecx,edx,edi,esi
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 11
+hdd.ASM
+HDD
+
+
+    551					 ;	  mov	  BYTE PTR GS:[HDDNumber],0
+1   552	    021D  66| 50			 PUSH	 EAX
+1   553	    021F  66| 51			 PUSH	 ECX
+1   554	    0221  66| 52			 PUSH	 EDX
+1   555	    0223  66| 57			 PUSH	 EDI
+1   556	    0225  66| 56			 PUSH	 ESI
+1   557	    0227  E8 FF92			 call	 ReadHDD_ID
+    558	    022A  65: 80 3E 0008 00		 cmp	 BYTE PTR GS:[HDDErrorCode],0
+    559	    0230  0F 85	00E2			 jne	 $$Error1
+    560
+    561	    0234  66| 65: C7 06	0009  +		 mov	 DWORD PTR GS:SectorAddress,0
+    562		  00000000
+    563	    023E  E8 FE65			 call	 ReadHDDSector
+    564
+    565	    0241  66| 65: A1 01D3		 mov	 eax,GS:[SectorDataBuffer+1BEh+8]
+    566	    0246  66| 65: A3 020D		 mov	 GS:PriDOS_StartSector,eax
+    567	    024B  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+    568	    0250  E8 FE53			 call	 ReadHDDSector
+    569
+    570	    0253  65: 0F B6 06 001A		 movzx	 ax,GS:SectorDataBuffer[0Dh]
+    571	    0259  65: A3 0211			 mov	 GS:SectorsInCluster,ax
+    572	    025D  66| 65: 0F B7	06    +		 movzx	 eax,WORD PTR GS:SectorDataBuffer[0Eh]
+    573		  001B
+    574	    0264  66| 65: A3 0213		 mov	 GS:RSects,eax
+    575	    0269  65: 0F B6 06 001D		 movzx	 ax,GS:SectorDataBuffer[10h]
+    576	    026F  65: A3 0217			 mov	 GS:FATsOnDisk,ax
+    577	    0273  65: A1 0023			 mov	 ax,GS:SectorDataBuffer[16h]
+    578	    0277  65: A3 0219			 mov	 GS:FATSize,ax
+    579	    027B  66| 65: A1 0029		 mov	 eax,GS:SectorDataBuffer[1Ch]
+    580	    0280  66| 65: A3 021B		 mov	 GS:HiddenSectors,eax
+    581
+    582	    0285  66| 65: A1 020D		 mov	 eax,GS:PriDOS_StartSector
+    583	    028A  66| 65: 03 06	0213		 add	 eax,GS:RSects
+    584	    0290  66| 65: A3 021F		 mov	 GS:FATStartSect,eax
+    585	    0295  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+    586
+    587	    029A  1E				 push	 DS
+    588	    029B  06				 push	 ES
+    589	    029C  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+    590	    02A1  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    591	    02A6  66| BF 00004227		 mov	 edi,FATBuffer
+    592	    02AC  65: 8B 16 0219		 mov	 dx,GS:[FATSize]
+    593	    02B1			 $$NextFATSector:
+    594	    02B1  E8 FDF2			 call	 ReadHDDSector
+    595	    02B4  66| 65: FF 06	0009		 inc	 DWORD PTR GS:SectorAddress
+    596	    02BA  66| BE 0000000D		 mov	 esi,SectorDataBuffer
+    597	    02C0  66| B9 00000200		 mov	 ecx,512
+    598	    02C6  67				 db	 67h
+    599	    02C7  F3> A4			 rep	 movsb
+    600	    02C9  4A				 dec	 dx
+    601	    02CA  75 E5				 jnz	 SHORT $$NextFATSector
+    602
+    603	    02CC  66| 65: 0F B7	06    +		 movzx	 eax,WORD PTR GS:FATSize
+    604		  0219
+    605	    02D3  66| 65: 0F B7	16    +		 movzx	 edx,WORD PTR GS:FATsOnDisk
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 12
+hdd.ASM
+HDD
+
+
+    606		  0217
+    607	    02DA  66| F7 E2			 mul	 edx
+    608	    02DD  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+    609	    02E3  66| 65: A3 0223		 mov	 GS:RootDirStartSect,eax
+    610	    02E8  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+    611
+    612	    02ED  66| BF 00000227		 mov	 edi,RootDirBuffer
+    613	    02F3  BA 0020			 mov	 dx,RootDirSize
+    614	    02F6			 $$NextRootSector:
+    615	    02F6  E8 FDAD			 call	 ReadHDDSector
+    616	    02F9  66| 65: FF 06	0009		 inc	 DWORD PTR GS:SectorAddress
+    617	    02FF  66| BE 0000000D		 mov	 esi,SectorDataBuffer
+    618	    0305  66| B9 00000200		 mov	 ecx,512
+    619	    030B  67				 db	 67h
+    620	    030C  F3> A4			 rep	 movsb
+    621	    030E  4A				 dec	 dx
+    622	    030F  75 E5				 jnz	 SHORT $$NextRootSector
+    623	    0311  07				 pop	 ES
+    624	    0312  1F				 pop	 DS
+    625	    0313  F8				 clc
+    626	    0314  EB 01				 jmp	 SHORT $$End
+    627	    0316			 $$Error1:
+    628	    0316  F9				 stc
+    629					 ;	  mov	  BYTE PTR GS:[HDDErrorCode],1
+    630					 ;	  jmp	  SHORT	$$End
+    631	    0317			 $$End:
+1   632	    0317  66| 5E			 POP	 ESI
+1   633	    0319  66| 5F			 POP	 EDI
+1   634	    031B  66| 5A			 POP	 EDX
+1   635	    031D  66| 59			 POP	 ECX
+1   636	    031F  66| 58			 POP	 EAX
+1   637	    0321  C3				 RET	 00000h
+    638	    0322			 Mount	 ENDP
+    639
+    640					 ; Инициализация файловой системы
+    641	    0322			 InitHDD PROC	 C FAR
+    642						 public	 InitHDD
+    643
+    644						 uses	 ES,GS,eax,ecx,edi
+    645
+1   646	    0322  06				 PUSH	 ES
+1   647	    0323  0F A8				 PUSH	 GS
+1   648	    0325  66| 50			 PUSH	 EAX
+1   649	    0327  66| 51			 PUSH	 ECX
+1   650	    0329  66| 57			 PUSH	 EDI
+1   651	    032B  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+    652
+    653	    0330  E8 FEEA			 call	 Mount
+    654	    0333  72 17				 jc	 $$End
+    655	    0335  66| B9 00000040		 mov	 ecx,MaxFiles*8
+    656	    033B  66| BF 00024232		 mov	 edi,Files
+    657	    0341  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    658	    0346  B0 FF				 mov	 al,0FFh
+    659	    0348  67				 db	 67h
+    660	    0349  F3> AA			 rep	 stosb
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 13
+hdd.ASM
+HDD
+
+
+    661	    034B  F8				 clc
+    662	    034C			 $$End:
+1   663	    034C  66| 5F			 POP	 EDI
+1   664	    034E  66| 59			 POP	 ECX
+1   665	    0350  66| 58			 POP	 EAX
+1   666	    0352  0F A9				 POP	 GS
+1   667	    0354  07				 POP	 ES
+1   668	    0355  CB				 RET	 00000h
+    669	    0356			 InitHDD ENDP
+    670
+    671					 ;
+    672	    0356			 PrepareFileName PROC	 NEAR
+    673	    0356  06				 push	 ES
+    674	    0357  66| 60			 pushad
+    675	    0359  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    676	    035E  66| BF 00024227		 mov	 edi,TmpDirName
+    677	    0364  66| B8 20202020		 mov	 eax,20202020h
+    678	    036A  66| 65: 67| A3      +		 mov	 GS:[TmpDirName],eax
+    679		  00024227
+    680	    0372  66| 65: 67| A3      +		 mov	 GS:[TmpDirName+4],eax
+    681		  0002422B
+    682	    037A  65: 67| A3 0002422F		 mov	 GS:[TmpDirName+8],ax
+    683	    0381  65: 67| A2 00024231		 mov	 GS:[TmpDirName+10],al
+    684	    0388  B9 0008			 mov	 cx,8
+    685	    038B			 $$NameLoop:
+    686	    038B  67				 db	 67h
+    687	    038C  AC				 lodsb
+    688	    038D  3C 2E				 cmp	 al,'.'
+    689	    038F  74 08				 je	 SHORT $$GetExt
+    690	    0391  0A C0				 or	 al,al
+    691	    0393  74 1E				 jz	 SHORT $$End
+    692	    0395  67				 db	 67h
+    693	    0396  AA				 stosb
+    694	    0397  E2 F2				 loop	 $$NameLoop
+    695	    0399			 $$GetExt:
+    696	    0399  66| BF 0002422F		 mov	 edi,TmpDirName+8
+    697	    039F  B9 0003			 mov	 cx,3
+    698	    03A2  67| 80 3E 2E			 cmp	 BYTE PTR DS:[esi],'.'
+    699	    03A6  75 01				 jne	 SHORT $$ExtLoop
+    700	    03A8  46				 inc	 si
+    701	    03A9			 $$ExtLoop:
+    702	    03A9  67				 db	 67h
+    703	    03AA  AC				 lodsb
+    704	    03AB  0A C0				 or	 al,al
+    705	    03AD  74 04				 jz	 SHORT $$End
+    706	    03AF  67				 db	 67h
+    707	    03B0  AA				 stosb
+    708	    03B1  E2 F6				 loop	 $$ExtLoop
+    709	    03B3			 $$End:
+    710	    03B3  66| 61			 popad
+    711	    03B5  07				 pop	 ES
+    712	    03B6  C3				 ret
+    713	    03B7			 PrepareFileName ENDP
+    714
+    715					 ;
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 14
+hdd.ASM
+HDD
+
+
+    716					 ; Поиск файла в корневой директории
+    717					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+    718					 ; Выход без ошибки:
+    719					 ; CF =	0, EAX = номер элемента	каталога
+    720					 ; Выход с ошибкой:
+    721					 ; CF =	1, EAX - не определён
+    722	    03B7			 FileSearch	 PROC	 C NEAR
+    723						 uses	 DS,ES,ecx,edi,esi
+    724
+1   725	    03B7  1E				 PUSH	 DS
+1   726	    03B8  06				 PUSH	 ES
+1   727	    03B9  66| 51			 PUSH	 ECX
+1   728	    03BB  66| 57			 PUSH	 EDI
+1   729	    03BD  66| 56			 PUSH	 ESI
+1   730	    03BF  66| 8B F2			 mov	 esi,edx
+    731	    03C2  E8 FF91			 call	 PrepareFileName
+    732
+    733	    03C5  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+    734	    03CA  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    735	    03CF  66| BE 00024227		 mov	 esi,TmpDirName
+    736	    03D5  66| BF 00000227		 mov	 edi,RootDirBuffer
+    737	    03DB  B9 0200			 mov	 cx,512
+    738	    03DE			 $$NextElement:
+    739	    03DE  66| 51			 push	 ecx
+    740	    03E0  66| 57			 push	 edi
+    741	    03E2  66| 56			 push	 esi
+    742	    03E4  66| B9 0000000B		 mov	 ecx,11
+    743	    03EA  67				 db	 67h
+    744	    03EB  F3> A6			 repe	 cmpsb
+    745	    03ED  66| 5E			 pop	 esi
+    746	    03EF  66| 5F			 pop	 edi
+    747	    03F1  66| 59			 pop	 ecx
+    748	    03F3  74 09				 je	 SHORT $$FileFound
+    749	    03F5  66| 83 C7 20			 add	 edi,32
+    750	    03F9  E2 E3				 loop	 $$NextElement
+    751	    03FB  F9				 stc
+    752	    03FC  EB 0F				 jmp	 SHORT $$End
+    753	    03FE			 $$FileFound:
+    754	    03FE  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+    755	    0405  66| C1 EF 05			 shr	 edi,5
+    756	    0409  66| 8B C7			 mov	 eax,edi
+    757	    040C  F8				 clc
+    758	    040D			 $$End:
+1   759	    040D  66| 5E			 POP	 ESI
+1   760	    040F  66| 5F			 POP	 EDI
+1   761	    0411  66| 59			 POP	 ECX
+1   762	    0413  07				 POP	 ES
+1   763	    0414  1F				 POP	 DS
+1   764	    0415  C3				 RET	 00000h
+    765	    0416			 FileSearch	 ENDP
+    766
+    767					 ;
+    768	    0416			 GetFileRec	 PROC	 C NEAR
+    769						 uses	 ES,ecx
+1   770	    0416  06				 PUSH	 ES
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 15
+hdd.ASM
+HDD
+
+
+1   771	    0417  66| 51			 PUSH	 ECX
+1   772	    0419  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    773	    041E  66| B9 00000008		 mov	 ecx,MaxFiles
+    774	    0424  66| 33 FF			 xor	 edi,edi
+    775	    0427			 $$NextFileRec:
+    776	    0427  65: 67| 83 3C	FD    +		 cmp	 WORD PTR GS:Files[edi*8][TFileRec.DirItem],0FFFFh
+    777		  00024232 FF
+    778	    0431  74 07				 je	 $$FileRecFound
+    779	    0433  66| 47			 inc	 edi
+    780	    0435  E2 F0				 loop	 $$NextFileRec
+    781	    0437  F9				 stc
+    782	    0438  EB 01				 jmp	 SHORT $$End
+    783	    043A			 $$FileRecFound:
+    784	    043A  F8				 clc
+    785	    043B			 $$End:
+1   786	    043B  66| 59			 POP	 ECX
+1   787	    043D  07				 POP	 ES
+1   788	    043E  C3				 RET	 00000h
+    789	    043F			 GetFileRec	 ENDP
+    790
+    791					 ; Открыть существующий	файл
+    792					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+    793					 ; Выход без ошибки:
+    794					 ; CF =	0, EAX = идентификатор файла
+    795					 ; Выход с ошибкой:
+    796					 ; CF =	1, EAX - не определён
+    797	    043F			 FileOpen	 PROC	 C FAR
+    798						 public	 FileOpen
+    799	    043F  E8 0001			 call	 _FileOpen
+1   800	    0442  CB				 RET	 00000h
+    801	    0443			 FileOpen	 ENDP
+    802
+    803	    0443			 _FileOpen	 PROC	 C NEAR
+    804						 uses	 ES,GS,ecx,edi
+    805
+1   806	    0443  06				 PUSH	 ES
+1   807	    0444  0F A8				 PUSH	 GS
+1   808	    0446  66| 51			 PUSH	 ECX
+1   809	    0448  66| 57			 PUSH	 EDI
+1   810	    044A  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+    811
+    812	    044F  E8 FFC4			 call	 GetFileRec
+    813	    0452  72 20				 jc	 SHORT $$End
+    814	    0454  E8 FF60			 call	 FileSearch
+    815	    0457  72 1B				 jc	 SHORT $$End
+    816
+    817	    0459  65: 67| 89 04	FD    +		 mov	 GS:Files[edi*8][TFileRec.DirItem],ax
+    818		  00024232
+    819	    0462  66| 65: 67| C7 04 FD+		 mov	 DWORD PTR GS:Files[edi*8][TFileRec.FilePosition],0
+    820		  00024236 00000000
+    821	    0470  66| 8B C7			 mov	 eax,edi
+    822	    0473  F8				 clc
+    823	    0474			 $$End:
+1   824	    0474  66| 5F			 POP	 EDI
+1   825	    0476  66| 59			 POP	 ECX
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 16
+hdd.ASM
+HDD
+
+
+1   826	    0478  0F A9				 POP	 GS
+1   827	    047A  07				 POP	 ES
+1   828	    047B  C3				 RET	 00000h
+    829	    047C			 _FileOpen	 ENDP
+    830
+    831					 ; Найти свободный кластер в FAT
+    832					 ; Выход без ошибки:
+    833					 ; CF =	0, EAX = номер кластера
+    834					 ; Выход с ошибкой:
+    835					 ; CF =	1, EAX - не определён
+    836	    047C			 FindFreeCluster PROC	 C NEAR
+    837						 uses	 ES,ecx,edi,esi
+    838
+1   839	    047C  06				 PUSH	 ES
+1   840	    047D  66| 51			 PUSH	 ECX
+1   841	    047F  66| 57			 PUSH	 EDI
+1   842	    0481  66| 56			 PUSH	 ESI
+1   843	    0483  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+    844	    0488  66| BF 00004227		 mov	 edi,FATBuffer
+    845	    048E  66| 65: 0F B7	0E    +		 movzx	 ecx,WORD PTR GS:FATSize
+    846		  0219
+    847	    0495  66| C1 E1 09			 shl	 ecx,9
+    848	    0499  33 C0				 xor	 ax,ax
+    849	    049B  67				 db	 67h
+    850	    049C  F2> AF			 repne	 scasw
+    851	    049E  75 10				 jne	 SHORT $$Error1
+    852	    04A0  66| 81 EF 00004229		 sub	 edi,FATBuffer+2
+    853	    04A7  66| D1 EF			 shr	 edi,1
+    854	    04AA  66| 8B C7			 mov	 eax,edi
+    855	    04AD  F8				 clc
+    856	    04AE  EB 01				 jmp	 SHORT $$End
+    857	    04B0			 $$Error1:
+    858	    04B0  F9				 stc
+    859					 ;	  jmp	  SHORT	$$End
+    860	    04B1			 $$End:
+1   861	    04B1  66| 5E			 POP	 ESI
+1   862	    04B3  66| 5F			 POP	 EDI
+1   863	    04B5  66| 59			 POP	 ECX
+1   864	    04B7  07				 POP	 ES
+1   865	    04B8  C3				 RET	 00000h
+    866	    04B9			 FindFreeCluster ENDP
+    867
+    868					 ; Удалить файл	по номеру элемента каталога
+    869					 ; EAX = номер элемента	каталога
+    870	    04B9			 FileEraseDir	 PROC	 C NEAR
+    871						 uses	 DS,eax,ebx,ecx,edx,edi,esi
+1   872	    04B9  1E				 PUSH	 DS
+1   873	    04BA  66| 50			 PUSH	 EAX
+1   874	    04BC  66| 53			 PUSH	 EBX
+1   875	    04BE  66| 51			 PUSH	 ECX
+1   876	    04C0  66| 52			 PUSH	 EDX
+1   877	    04C2  66| 57			 PUSH	 EDI
+1   878	    04C4  66| 56			 PUSH	 ESI
+1   879	    04C6  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+    880
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 17
+hdd.ASM
+HDD
+
+
+    881	    04CB  66| 8B F8			 mov	 edi,eax
+    882	    04CE  66| C1 E7 05			 shl	 edi,5
+    883	    04D2  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+    884
+    885	    04D9  66| 65: 67| 0F B7 47+		 movzx	 eax,GS:[edi][TDirItem.DIR_FstClusLO]
+    886		  1A
+    887	    04E0  66| 8B D8			 mov	 ebx,eax
+    888
+    889					 ; Fix Dir
+    890	    04E3  65: 67| C6 07	E5		 mov	 BYTE PTR GS:[edi][TDirItem.DIR_Name],0E5h
+    891	    04E8  65: 67| 80 7F	20 00		 cmp	 BYTE PTR GS:[edi+32][TDirItem.DIR_Name],0
+    892	    04EE  75 07				 jne	 SHORT $$FixDir
+    893	    04F0  65: 67| C7 47	1A    +		 mov	 WORD PTR GS:[edi][TDirItem.DIR_FstClusLO],0
+    894		  0000
+    895	    04F7			 $$FixDir:
+    896	    04F7  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+    897	    04FE  66| C1 EF 09			 shr	 edi,9
+    898	    0502  66| 8B F7			 mov	 esi,edi
+    899	    0505  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+    900	    050B  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+    901	    0511  66| C1 E6 09			 shl	 esi,9
+    902	    0515  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+    903	    051C  E8 FC49			 call	 WriteHDDSectorBuf
+    904
+    905	    051F			 $$NextCluster:
+    906	    051F  66| 8B C8			 mov	 ecx,eax
+    907	    0522  66| C1 E9 08			 shr	 ecx,8
+    908	    0526  66| 8B D3			 mov	 edx,ebx
+    909	    0529  66| C1 EA 08			 shr	 edx,8
+    910
+    911	    052D  66| 3B CA			 cmp	 ecx,edx
+    912	    0530  74 1D				 je	 SHORT $$ClearCluster
+    913
+    914	    0532  66| 8B F2			 mov	 esi,edx
+    915	    0535  66| 65: 03 16	021F		 add	 edx,GS:FATStartSect
+    916	    053B  66| 65: 89 16	0009		 mov	 GS:SectorAddress,edx
+    917	    0541  66| C1 E6 09			 shl	 esi,9
+    918	    0545  66| 81 C6 00004227		 add	 esi,FATBuffer
+    919	    054C  E8 FC19			 call	 WriteHDDSectorBuf
+    920
+    921	    054F			 $$ClearCluster:
+    922	    054F  66| 65: 67| 0F B7 1C+		 movzx	 ebx,WORD PTR GS:FATBuffer[eax*2]
+    923		  45 00004227
+    924	    055A  65: 67| C7 04	45    +		 mov	 WORD PTR GS:FATBuffer[eax*2],0
+    925		  00004227 0000
+    926
+    927	    0565  83 FB	FF			 cmp	 bx,0FFFFh
+    928	    0568  74 04				 je	 SHORT $$ClearLastCluster
+    929	    056A  66| 93			 xchg	 eax,ebx
+    930	    056C  EB B1				 jmp	 SHORT $$NextCluster
+    931
+    932	    056E			 $$ClearLastCluster:
+    933					 ;	  shl	  eax,1
+    934					 ;	  shr	  eax,9
+    935	    056E  66| C1 E8 08			 shr	 eax,8
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 18
+hdd.ASM
+HDD
+
+
+    936	    0572  66| 8B F0			 mov	 esi,eax
+    937	    0575  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+    938	    057B  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+    939	    0580  66| C1 E6 09			 shl	 esi,9
+    940	    0584  66| 81 C6 00004227		 add	 esi,FATBuffer
+    941	    058B  E8 FBDA			 call	 WriteHDDSectorBuf
+    942
+1   943	    058E  66| 5E			 POP	 ESI
+1   944	    0590  66| 5F			 POP	 EDI
+1   945	    0592  66| 5A			 POP	 EDX
+1   946	    0594  66| 59			 POP	 ECX
+1   947	    0596  66| 5B			 POP	 EBX
+1   948	    0598  66| 58			 POP	 EAX
+1   949	    059A  1F				 POP	 DS
+1   950	    059B  C3				 RET	 00000h
+    951	    059C			 FileEraseDir	 ENDP
+    952
+    953					 ; Удалить файл
+    954					 ; EAX = идентификатор файла
+    955					 ; Выход без ошибки:
+    956					 ; CF =	0
+    957					 ; Выход с ошибкой:
+    958					 ; CF =	1
+    959	    059C			 FileErase	 PROC	 C FAR
+    960						 public	 FileErase
+    961	    059C  E8 0001			 call	 _FileErase
+1   962	    059F  CB				 RET	 00000h
+    963	    05A0			 FileErase	 ENDP
+    964
+    965	    05A0			 _FileErase	 PROC	 C NEAR
+    966						 uses	 GS,eax
+    967
+1   968	    05A0  0F A8				 PUSH	 GS
+1   969	    05A2  66| 50			 PUSH	 EAX
+1   970	    05A4  66| 83 F8 08			 cmp	 eax,MaxFiles
+    971	    05A8  73 1B				 jae	 SHORT $$Error1
+    972	    05AA  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+    973	    05AF  66| 65: 67| 0F B7 04+		 movzx	 eax,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+    974		  C5 00024232
+    975	    05BA  3D FFFF			 cmp	 ax,0FFFFh
+    976	    05BD  74 06				 je	 SHORT $$Error1
+    977	    05BF  E8 FEF7			 call	 FileEraseDir
+    978	    05C2  F8				 clc
+    979	    05C3  EB 01				 jmp	 SHORT $$End
+    980	    05C5			 $$Error1:
+    981	    05C5  F9				 stc
+    982	    05C6			 $$End:
+1   983	    05C6  66| 58			 POP	 EAX
+1   984	    05C8  0F A9				 POP	 GS
+1   985	    05CA  C3				 RET	 00000h
+    986	    05CB			 _FileErase	 ENDP
+    987
+    988					 ; Удалить файл	по имени
+    989					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+    990					 ; Выход без ошибки:
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 19
+hdd.ASM
+HDD
+
+
+    991					 ; CF =	0
+    992					 ; Выход с ошибкой:
+    993					 ; CF =	1
+    994	    05CB			 FileEraseName	 PROC	 C FAR
+    995						 public	 FileEraseName
+    996	    05CB  E8 0001			 call	 _FileEraseName
+1   997	    05CE  CB				 RET	 00000h
+    998	    05CF			 FileEraseName	 ENDP
+    999
+   1000	    05CF			 _FileEraseName	 PROC	 C NEAR
+   1001						 uses	 GS,eax
+   1002
+1  1003	    05CF  0F A8				 PUSH	 GS
+1  1004	    05D1  66| 50			 PUSH	 EAX
+1  1005	    05D3  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1006
+   1007	    05D8  E8 FDDC			 call	 FileSearch
+   1008	    05DB  72 04				 jc	 SHORT $$End
+   1009	    05DD  E8 FED9			 call	 FileEraseDir
+   1010	    05E0  F8				 clc
+   1011					 ;	  jmp	  SHORT	$$End
+   1012	    05E1			 $$End:
+1  1013	    05E1  66| 58			 POP	 EAX
+1  1014	    05E3  0F A9				 POP	 GS
+1  1015	    05E5  C3				 RET	 00000h
+   1016	    05E6			 _FileEraseName	 ENDP
+   1017
+   1018					 ; Переименовать файл
+   1019					 ; EAX = идентификатор файла
+   1020					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+   1021					 ; Выход без ошибки:
+   1022					 ; CF =	0
+   1023					 ; Выход с ошибкой:
+   1024					 ; CF =	1
+   1025	    05E6			 FileRename	 PROC	 C FAR
+   1026						 public	 FileRename
+   1027	    05E6  E8 0001			 call	 _FileRename
+1  1028	    05E9  CB				 RET	 00000h
+   1029	    05EA			 FileRename	 ENDP
+   1030
+   1031	    05EA			 _FileRename	 PROC	 C NEAR
+   1032						 uses	 DS,ES,GS,eax,ecx,edi,esi
+   1033
+1  1034	    05EA  1E				 PUSH	 DS
+1  1035	    05EB  06				 PUSH	 ES
+1  1036	    05EC  0F A8				 PUSH	 GS
+1  1037	    05EE  66| 50			 PUSH	 EAX
+1  1038	    05F0  66| 51			 PUSH	 ECX
+1  1039	    05F2  66| 57			 PUSH	 EDI
+1  1040	    05F4  66| 56			 PUSH	 ESI
+1  1041	    05F6  66| 83 F8 08			 cmp	 eax,MaxFiles
+   1042	    05FA  73 70				 jae	 SHORT $$Error1
+   1043	    05FC  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1044	    0601  66| 65: 67| 0F B7 04+		 movzx	 eax,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+   1045		  C5 00024232
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 20
+hdd.ASM
+HDD
+
+
+   1046	    060C  3D FFFF			 cmp	 ax,0FFFFh
+   1047	    060F  74 5B				 je	 SHORT $$Error1
+   1048
+   1049	    0611  66| 8B F8			 mov	 edi,eax
+   1050	    0614  66| C1 E7 05			 shl	 edi,5
+   1051	    0618  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   1052
+   1053	    061F  E8 FD95			 call	 FileSearch
+   1054	    0622  73 48				 jnc	 SHORT $$Error1
+   1055
+   1056	    0624  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   1057	    0629  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+   1058	    062E  66| BE 00024227		 mov	 esi,TmpDirName
+   1059	    0634  66| B9 0000000B		 mov	 ecx,11
+   1060	    063A  66| 57			 push	 edi
+   1061	    063C  67				 db	 67h
+   1062	    063D  F3> A4			 rep	 movsb
+   1063	    063F  66| 5F			 pop	 edi
+   1064
+   1065	    0641  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+   1066	    0648  66| C1 EF 09			 shr	 edi,9
+   1067	    064C  66| 8B F7			 mov	 esi,edi
+   1068	    064F  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+   1069	    0655  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+   1070	    065B  66| C1 E6 09			 shl	 esi,9
+   1071	    065F  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1072	    0666  E8 FAFF			 call	 WriteHDDSectorBuf
+   1073
+   1074	    0669  F8				 clc
+   1075	    066A  EB 01				 jmp	 SHORT $$End
+   1076	    066C			 $$Error1:
+   1077	    066C  F9				 stc
+   1078	    066D			 $$End:
+1  1079	    066D  66| 5E			 POP	 ESI
+1  1080	    066F  66| 5F			 POP	 EDI
+1  1081	    0671  66| 59			 POP	 ECX
+1  1082	    0673  66| 58			 POP	 EAX
+1  1083	    0675  0F A9				 POP	 GS
+1  1084	    0677  07				 POP	 ES
+1  1085	    0678  1F				 POP	 DS
+1  1086	    0679  C3				 RET	 00000h
+   1087	    067A			 _FileRename	 ENDP
+   1088
+   1089					 ; Обрезать файл по текущему указателю в нём
+   1090					 ; EAX = идентификатор файла
+   1091					 ; Выход без ошибки:
+   1092					 ; CF =	0
+   1093					 ; Выход с ошибкой:
+   1094					 ; CF =	1
+   1095	    067A			 FileTrunc	PROC	C FAR
+   1096						 public	 FileTrunc
+   1097	    067A  E8 0001			 call	 _FileTrunc
+1  1098	    067D  CB				 RET	 00000h
+   1099	    067E			 FileTrunc	ENDP
+   1100
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 21
+hdd.ASM
+HDD
+
+
+   1101	    067E			 _FileTrunc	PROC	C NEAR
+   1102						 uses	 DS,ES,GS,eax,ecx,edi,esi
+   1103
+1  1104	    067E  1E				 PUSH	 DS
+1  1105	    067F  06				 PUSH	 ES
+1  1106	    0680  0F A8				 PUSH	 GS
+1  1107	    0682  66| 50			 PUSH	 EAX
+1  1108	    0684  66| 51			 PUSH	 ECX
+1  1109	    0686  66| 57			 PUSH	 EDI
+1  1110	    0688  66| 56			 PUSH	 ESI
+1  1111	    068A  66| 83 F8 08			 cmp	 eax,MaxFiles
+   1112	    068E  0F 83	00DB			 jae	 $$Error1
+   1113	    0692  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1114	    0697  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+   1115		  C5 00024232
+   1116	    06A2  83 FF	FF			 cmp	 di,0FFFFh
+   1117	    06A5  0F 84	00C4			 je	 $$Error1
+   1118
+   1119	    06A9  66| 65: 67| 8B 04 C5+		 mov	 eax,GS:Files[eax*8][TFileRec.FilePosition]		 ;Взяли	указатель+
+   1120		  00024236		 в файле
+   1121	    06B3  66| C1 E7 05			 shl	 edi,5
+   1122	    06B7  66| 57			 push	 edi
+   1123					 ;	 add	 edi,RootDirBuffer
+   1124	    06B9  66| 65: 67| 8B 8F   +		 mov	 ecx,GS:RootDirBuffer[edi][TDirItem.DIR_FileSize]	 ;Взяли	размер	 +
+   1125		  00000243		 файла
+   1126	    06C2  66| 65: 67| 89 87   +		 mov	 GS:RootDirBuffer[edi][TDirItem.DIR_FileSize],eax	 ;Установили	 +
+   1127		  00000243		 новый размер файла
+   1128					 ;	 sub	 edi,RootDirBuffer
+   1129					 ;	 pop	 edi
+   1130
+   1131					 ; Fix Dir
+   1132	    06CB  66| C1 EF 09			 shr	 edi,9
+   1133	    06CF  66| 8B F7			 mov	 esi,edi
+   1134	    06D2  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+   1135	    06D8  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+   1136	    06DE  66| C1 E6 09			 shl	 esi,9
+   1137	    06E2  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1138	    06E9  E8 FA7C			 call	 WriteHDDSectorBuf
+   1139	    06EC  66| 5F			 pop	 edi
+   1140					 ;
+   1141					 ;
+   1142	    06EE  66| 65: 67| 0F B7 87+		 movzx	 eax,GS:RootDirBuffer[edi][TDirItem.DIR_FstClusLO]
+   1143		  00000241
+   1144	    06F8  66| 8B D8			 mov	 ebx,eax
+   1145
+   1146	    06FB			 $$NextCluster:
+   1147	    06FB  66| 8B C8			 mov	 ecx,eax
+   1148	    06FE  66| C1 E9 08			 shr	 ecx,8
+   1149	    0702  66| 8B D3			 mov	 edx,ebx
+   1150	    0705  66| C1 EA 08			 shr	 edx,8
+   1151
+   1152	    0709  66| 3B CA			 cmp	 ecx,edx
+   1153	    070C  74 1D				 je	 SHORT $$ClearCluster
+   1154
+   1155	    070E  66| 8B F2			 mov	 esi,edx
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 22
+hdd.ASM
+HDD
+
+
+   1156	    0711  66| 65: 03 16	021F		 add	 edx,GS:FATStartSect
+   1157	    0717  66| 65: 89 16	0009		 mov	 GS:SectorAddress,edx
+   1158	    071D  66| C1 E6 09			 shl	 esi,9
+   1159	    0721  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1160	    0728  E8 FA3D			 call	 WriteHDDSectorBuf
+   1161
+   1162	    072B			 $$ClearCluster:
+   1163	    072B  66| 65: 67| 0F B7 1C+		 movzx	 ebx,WORD PTR GS:FATBuffer[eax*2]
+   1164		  45 00004227
+   1165	    0736  65: 67| C7 04	45    +		 mov	 WORD PTR GS:FATBuffer[eax*2],0
+   1166		  00004227 0000
+   1167
+   1168	    0741  83 FB	FF			 cmp	 bx,0FFFFh
+   1169	    0744  74 04				 je	 SHORT $$ClearLastCluster
+   1170	    0746  66| 93			 xchg	 eax,ebx
+   1171	    0748  EB B1				 jmp	 SHORT $$NextCluster
+   1172
+   1173	    074A			 $$ClearLastCluster:
+   1174					 ;	  shl	  eax,1
+   1175					 ;	  shr	  eax,9
+   1176	    074A  66| C1 E8 08			 shr	 eax,8
+   1177	    074E  66| 8B F0			 mov	 esi,eax
+   1178	    0751  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1179	    0757  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1180	    075C  66| C1 E6 09			 shl	 esi,9
+   1181	    0760  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1182	    0767  E8 F9FE			 call	 WriteHDDSectorBuf
+   1183					 ;
+   1184					 ;
+   1185	    076A  F8				 clc
+   1186	    076B  EB 01				 jmp	 SHORT $$End
+   1187	    076D			 $$Error1:
+   1188	    076D  F9				 stc
+   1189	    076E			 $$End:
+1  1190	    076E  66| 5E			 POP	 ESI
+1  1191	    0770  66| 5F			 POP	 EDI
+1  1192	    0772  66| 59			 POP	 ECX
+1  1193	    0774  66| 58			 POP	 EAX
+1  1194	    0776  0F A9				 POP	 GS
+1  1195	    0778  07				 POP	 ES
+1  1196	    0779  1F				 POP	 DS
+1  1197	    077A  C3				 RET	 00000h
+   1198	    077B			 _FileTrunc	ENDP
+   1199
+   1200					 ; Создать и открыть файл
+   1201					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+   1202					 ; Выход без ошибки:
+   1203					 ; CF =	0, EAX = идентификатор файла
+   1204					 ; Выход с ошибкой:
+   1205					 ; CF =	1, EAX - не определён
+   1206	    077B			 FileCreate	 PROC	 C FAR
+   1207						 public	 FileCreate
+   1208	    077B  E8 0001			 call	 _FileCreate
+1  1209	    077E  CB				 RET	 00000h
+   1210	    077F			 FileCreate	 ENDP
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 23
+hdd.ASM
+HDD
+
+
+   1211
+   1212	    077F			 _FileCreate	 PROC	 C NEAR
+   1213
+   1214					 LOCAL	 FCluster:WORD
+   1215					 LOCAL	 FHandler:DWORD
+   1216
+   1217						 uses	 DS,ES,GS,ecx,edx,edi,esi
+   1218
+1  1219	    077F  C8 0006 00			 ENTERW	 00006h,0
+1  1220	    0783  1E				 PUSH	 DS
+1  1221	    0784  06				 PUSH	 ES
+1  1222	    0785  0F A8				 PUSH	 GS
+1  1223	    0787  66| 51			 PUSH	 ECX
+1  1224	    0789  66| 52			 PUSH	 EDX
+1  1225	    078B  66| 57			 PUSH	 EDI
+1  1226	    078D  66| 56			 PUSH	 ESI
+1  1227	    078F  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1228
+   1229	    0794  E8 FC7F			 call	 GetFileRec
+   1230	    0797  0F 82	019A			 jc	 $$Error1
+   1231	    079B  66| 89 7E FA			 mov	 FHandler,edi
+   1232	    079F  E8 FC15			 call	 FileSearch
+   1233	    07A2  72 03				 jc	 $$NewDirItem
+   1234
+   1235	    07A4  E8 FD12			 call	 FileEraseDir
+   1236
+   1237	    07A7			 $$NewDirItem:
+   1238	    07A7  66| 33 D2			 xor	 edx,edx
+   1239	    07AA			 $$NextDirItem:
+   1240	    07AA  66| 8B FA			 mov	 edi,edx
+   1241	    07AD  66| C1 E7 05			 shl	 edi,5
+   1242	    07B1  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   1243	    07B8  65: 67| 8A 07			 mov	 al,GS:[edi]
+   1244	    07BC  0A C0				 or	 al,al
+   1245	    07BE  74 13				 jz	 SHORT $$NewFile
+   1246	    07C0  3C E5				 cmp	 al,0E5h
+   1247	    07C2  74 0F				 je	 SHORT $$NewFile
+   1248	    07C4  66| 42			 inc	 edx
+   1249	    07C6  66| 81 FA 00000200		 cmp	 edx,RootDirItems
+   1250	    07CD  72 DB				 jb	 SHORT $$NextDirItem
+   1251	    07CF  F9				 stc
+   1252	    07D0  E9 0164			 jmp	 $$Error2
+   1253
+   1254	    07D3			 $$NewFile:
+   1255	    07D3  E8 FCA6			 call	 FindFreeCluster
+   1256	    07D6  0F 82	015F			 jc	 $$Error3
+   1257
+   1258	    07DA  89 46	FE			 mov	 FCluster,ax
+   1259	    07DD  65: 67| 89 47	1A		 mov	 GS:[edi][TDirItem.DIR_FstClusLO],ax
+   1260	    07E2  66| 33 C0			 xor	 eax,eax
+   1261	    07E5  65: 67| 88 47	0B		 mov	 GS:[edi][TDirItem.DIR_Attr],al
+   1262	    07EA  66| 65: 67| 89 47 0C		 mov	 DWORD PTR GS:[edi][TDirItem.DIR_NTRes],eax
+   1263	    07F0  66| 65: 67| 89 47 10		 mov	 DWORD PTR GS:[edi][TDirItem.DIR_CrtDate],eax
+   1264	    07F6  65: 67| 89 47	14		 mov	 GS:[edi][TDirItem.DIR_FstClusHI],ax
+   1265	    07FB  66| 65: 67| 89 47 1C		 mov	 GS:[edi][TDirItem.DIR_FileSize],eax
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 24
+hdd.ASM
+HDD
+
+
+   1266
+   1267					 ; Время и дата	создания файла
+   1268					 ;	  mov	  al,0Bh
+   1269					 ;	  out	  70h,al
+   1270					 ;	  in	  al,71h
+   1271					 ;	  or	  al,00000110b	  ; 24 часовой двоичный	режим
+   1272					 ;	  mov	  cl,al
+   1273					 ;	  mov	  al,0Bh
+   1274					 ;	  out	  70h,al
+   1275					 ;	  mov	  al,cl
+   1276					 ;	  out	  71h,al
+   1277	    0801  B8 0004			 mov	 ax,4					 ; час
+   1278	    0804  E6 70				 out	 70h,al
+   1279	    0806  E4 71				 in	 al,71h
+   1280	    0808  C1 E0	04			 shl	 ax,4
+   1281	    080B  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1282	    080E  D5 0A				 aad						 ; перевели в BIN
+   1283	    0810  0F B6	C8			 movzx	 cx,al
+   1284	    0813  C1 E1	06			 shl	 cx,6
+   1285
+   1286	    0816  B8 0002			 mov	 ax,2					 ; минута
+   1287	    0819  E6 70				 out	 70h,al
+   1288	    081B  E4 71				 in	 al,71h
+   1289	    081D  C1 E0	04			 shl	 ax,4
+   1290	    0820  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1291	    0823  D5 0A				 aad						 ; перевели в BIN
+   1292	    0825  0A C8				 or	 cl,al
+   1293	    0827  C1 E1	05			 shl	 cx,5
+   1294
+   1295	    082A  33 C0				 xor	 ax,ax					 ; секунда
+   1296	    082C  E6 70				 out	 70h,al
+   1297	    082E  E4 71				 in	 al,71h
+   1298	    0830  C1 E0	04			 shl	 ax,4
+   1299	    0833  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1300	    0836  D5 0A				 aad						 ; перевели в BIN
+   1301	    0838  D0 E8				 shr	 al,1
+   1302
+   1303	    083A  0A C8				 or	 cl,al
+   1304	    083C  65: 67| 89 4F	16		 mov	 GS:[edi][TDirItem.DIR_WrtTime],cx	 ; Время создания файла
+   1305
+   1306	    0841  B8 0032			 mov	 ax,32h					 ; 2 старшие цифры года	BCD
+   1307	    0844  E6 70				 out	 70h,al
+   1308	    0846  E4 71				 in	 al,71h
+   1309	    0848  C1 E0	04			 shl	 ax,4
+   1310	    084B  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1311	    084E  D5 0A				 aad						 ; перевели в BIN
+   1312	    0850  53				 push	 bx
+   1313	    0851  52				 push	 dx
+   1314	    0852  BB 0064			 mov	 bx,100
+   1315	    0855  F7 E3				 mul	 bx
+   1316	    0857  5A				 pop	 dx
+   1317	    0858  5B				 pop	 bx
+   1318	    0859  8B C8				 mov	 cx,ax					 ; 2 старшие цифры года	BIN * 100
+   1319	    085B  33 C0				 xor	 ax,ax
+   1320	    085D  B8 0009			 mov	 ax,9					 ; 2 младшие цифры года
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 25
+hdd.ASM
+HDD
+
+
+   1321	    0860  E6 70				 out	 70h,al
+   1322	    0862  E4 71				 in	 al,71h
+   1323	    0864  C1 E0	04			 shl	 ax,4
+   1324	    0867  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1325	    086A  D5 0A				 aad						 ; перевели в BIN
+   1326	    086C  03 C8				 add	 cx,ax
+   1327	    086E  81 E9	07BC			 sub	 cx,1980				 ; номер года минус 1980
+   1328	    0872  C1 E1	04			 shl	 cx,4
+   1329
+   1330	    0875  B8 0008			 mov	 ax,8					 ; месяц
+   1331	    0878  E6 70				 out	 70h,al
+   1332	    087A  E4 71				 in	 al,71h
+   1333	    087C  C1 E0	04			 shl	 ax,4
+   1334	    087F  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1335	    0882  D5 0A				 aad						 ; перевели в BIN
+   1336	    0884  0A C8				 or	 cl,al
+   1337	    0886  C1 E1	05			 shl	 cx,5
+   1338
+   1339	    0889  B8 0007			 mov	 ax,7					 ; день
+   1340	    088C  E6 70				 out	 70h,al
+   1341	    088E  E4 71				 in	 al,71h
+   1342	    0890  C1 E0	04			 shl	 ax,4
+   1343	    0893  C0 E8	04			 shr	 al,4					 ; получили неупакованное BCD
+   1344	    0896  D5 0A				 aad						 ; перевели в BIN
+   1345	    0898  0A C8				 or	 cl,al
+   1346	    089A  65: 67| 89 4F	18		 mov	 GS:[edi][TDirItem.DIR_WrtDate],cx	 ; Дата	создания файла
+   1347
+   1348					 ; Имя файла
+   1349	    089F  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   1350	    08A4  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+   1351	    08A9  66| BE 00024227		 mov	 esi,TmpDirName
+   1352	    08AF  66| B9 0000000B		 mov	 ecx,11
+   1353	    08B5  66| 57			 push	 edi
+   1354	    08B7  67				 db	 67h
+   1355	    08B8  F3> A4			 rep	 movsb
+   1356	    08BA  66| 5F			 pop	 edi
+   1357
+   1358	    08BC  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+   1359	    08C3  66| C1 EF 09			 shr	 edi,9
+   1360	    08C7  66| 8B F7			 mov	 esi,edi
+   1361	    08CA  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+   1362	    08D0  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+   1363	    08D6  66| C1 E6 09			 shl	 esi,9
+   1364	    08DA  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1365	    08E1  E8 F884			 call	 WriteHDDSectorBuf
+   1366
+   1367	    08E4  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1368	    08E9  65: 67| C7 04	45    +		 mov	 WORD PTR GS:FATBuffer[eax*2],0FFFFh
+   1369		  00004227 FFFF
+   1370	    08F4  66| D1 E0			 shl	 eax,1
+   1371	    08F7  66| C1 E8 09			 shr	 eax,9
+   1372	    08FB  66| 8B F0			 mov	 esi,eax
+   1373	    08FE  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1374	    0904  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1375	    0909  66| C1 E6 09			 shl	 esi,9
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 26
+hdd.ASM
+HDD
+
+
+   1376	    090D  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1377	    0914  E8 F851			 call	 WriteHDDSectorBuf
+   1378
+   1379	    0917  66| 8B 46 FA			 mov	 eax,FHandler
+   1380	    091B  65: 67| 89 14	C5    +		 mov	 GS:Files[eax*8][TFileRec.DirItem],dx
+   1381		  00024232
+   1382	    0924  66| 65: 67| C7 04 C5+		 mov	 DWORD PTR GS:Files[eax*8][TFileRec.FilePosition],0
+   1383		  00024236 00000000
+   1384	    0932			 $$CreateOK:
+   1385	    0932  F8				 clc
+   1386	    0933  EB 06				 jmp	 SHORT $$End
+   1387	    0935			 $$Error1:
+   1388	    0935  EB 04				 jmp	 SHORT $$End
+   1389	    0937			 $$Error2:
+   1390	    0937  EB 02				 jmp	 SHORT $$End
+   1391	    0939			 $$Error3:
+   1392	    0939  EB 00				 jmp	 SHORT $$End
+   1393	    093B			 $$End:
+1  1394	    093B  66| 5E			 POP	 ESI
+1  1395	    093D  66| 5F			 POP	 EDI
+1  1396	    093F  66| 5A			 POP	 EDX
+1  1397	    0941  66| 59			 POP	 ECX
+1  1398	    0943  0F A9				 POP	 GS
+1  1399	    0945  07				 POP	 ES
+1  1400	    0946  1F				 POP	 DS
+1  1401	    0947  C9				 LEAVEW
+1  1402	    0948  C3				 RET	 00000h
+   1403	    0949			 _FileCreate	 ENDP
+   1404
+   1405					 ; Создать и открыть файл заданного размера
+   1406					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+   1407					 ; В ECX размер	файла
+   1408					 ; Выход без ошибки:
+   1409					 ; CF =	0, EAX = идентификатор файла
+   1410					 ; Выход с ошибкой:
+   1411					 ; CF =	1, EAX - не определён
+   1412	    0949			 FileCreateSize	 PROC	 C FAR
+   1413						 public	 FileCreateSize
+   1414	    0949  E8 0001			 call	 _FileCreateSize
+1  1415	    094C  CB				 RET	 00000h
+   1416	    094D			 FileCreateSize	 ENDP
+   1417
+   1418	    094D			 _FileCreateSize PROC	 C NEAR
+   1419
+   1420					 LOCAL	 FCluster:WORD
+   1421					 LOCAL	 FSector:WORD
+   1422					 LOCAL	 FCount:DWORD
+   1423					 ;LOCAL	  FDirPtr:DWORD
+   1424					 LOCAL	 FFATChanged:WORD
+   1425
+   1426						 uses	 DS,ES,GS,ebx,edx,edi,esi
+   1427
+1  1428	    094D  C8 000A 00			 ENTERW	 0000Ah,0
+1  1429	    0951  1E				 PUSH	 DS
+1  1430	    0952  06				 PUSH	 ES
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 27
+hdd.ASM
+HDD
+
+
+1  1431	    0953  0F A8				 PUSH	 GS
+1  1432	    0955  66| 53			 PUSH	 EBX
+1  1433	    0957  66| 52			 PUSH	 EDX
+1  1434	    0959  66| 57			 PUSH	 EDI
+1  1435	    095B  66| 56			 PUSH	 ESI
+1  1436	    095D  66| 51			 push	 ecx
+   1437
+   1438	    095F  E8 FE1D			 call	 _FileCreate
+   1439	    0962  0F 82	021C			 jc	 $$End
+   1440
+   1441	    0966  66| 8B D8			 mov	 ebx,eax
+   1442
+   1443	    0969  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1444	    096E  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+   1445	    0973  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   1446	    0978  66| BF 0000000D		 mov	 edi,SectorDataBuffer
+   1447	    097E  66| 51			 push	 ecx
+   1448	    0980  66| B9 00000100		 mov	 ecx,256				 ;
+   1449	    0986  66| 33 C0			 xor	 eax,eax				 ;
+   1450	    0989  67				 db	 67h					 ;
+   1451	    098A  F3> AB			 rep	 stosw					 ;
+   1452	    098C  66| 59			 pop	 ecx
+   1453
+   1454	    098E  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[ebx*8][TFileRec.DirItem]
+   1455		  DD 00024232
+   1456	    0999  66| C1 E7 05			 shl	 edi,5
+   1457	    099D  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   1458
+   1459	    09A4  66| 65: 67| 0F B7 47+		 movzx	 eax,WORD PTR GS:[edi][TDirItem.DIR_FstClusLO]
+   1460		  1A
+   1461	    09AB  89 46	FE			 mov	 FCluster,ax
+   1462	    09AE  66| 33 D2			 xor	 edx,edx
+   1463	    09B1  89 56	FC			 mov	 FSector,dx
+   1464	    09B4  89 56	F6			 mov	 FFATChanged,dx
+   1465
+   1466	    09B7  66| 89 4E F8			 mov	 FCount,ecx
+   1467
+   1468	    09BB			 $$CalcSect:
+   1469	    09BB  66| 83 E8 02			 sub	 eax,2
+   1470	    09BF  66| 65: 0F B7	16    +		 movzx	 edx,WORD PTR GS:SectorsInCluster
+   1471		  0211
+   1472	    09C6  66| F7 E2			 mul	 edx
+   1473	    09C9  66| 65: 03 06	0223		 add	 eax,GS:RootDirStartSect
+   1474	    09CF  66| 83 C0 20			 add	 eax,RootDirSize
+   1475	    09D3  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1476					 ;
+   1477	    09D8			 $$WriteSect:
+   1478					 ;	  call	  WriteHDDSector
+   1479	    09D8  66| BA 00000200		 mov	 edx,512
+   1480	    09DE  66| 3B D1			 cmp	 edx,ecx
+   1481	    09E1  76 03				 jbe	 SHORT $$IncPos
+   1482	    09E3  66| 8B D1			 mov	 edx,ecx
+   1483	    09E6			 $$IncPos:
+   1484	    09E6  66| 65: 67| 01 14 DD+		 add	 GS:Files[ebx*8][TFileRec.FilePosition],edx
+   1485		  00024236
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 28
+hdd.ASM
+HDD
+
+
+   1486					 ;	  sub	  FCount,edx
+   1487	    09F0  66| 2B CA			 sub	 ecx,edx
+   1488	    09F3  0F 84	00C0			 jz	 $$WriteOK
+   1489	    09F7  8B 56	FC			 mov	 dx,FSector
+   1490	    09FA  42				 inc	 dx
+   1491	    09FB  65: 3B 16 0211		 cmp	 dx,GS:SectorsInCluster
+   1492	    0A00  73 0B				 jae	 SHORT $$NextCluster
+   1493	    0A02  89 56	FC			 mov	 FSector,dx
+   1494	    0A05  66| 65: FF 06	0009		 inc	 DWORD PTR GS:SectorAddress
+   1495	    0A0B  EB CB				 jmp	 SHORT $$WriteSect
+   1496	    0A0D			 $$NextCluster:
+   1497	    0A0D  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1498	    0A12  65: 67| 83 3C	45    +		 cmp	 WORD PTR GS:FatBuffer[eax*2],0FFFFh
+   1499		  00004227 FF
+   1500	    0A1C  74 14				 je	 SHORT $$AddCluster
+   1501
+   1502	    0A1E  65: 67| 8B 04	45    +		 mov	 ax,GS:FatBuffer[eax*2]
+   1503		  00004227
+   1504	    0A27  89 46	FE			 mov	 FCluster,ax
+   1505	    0A2A  66| 33 D2			 xor	 edx,edx
+   1506	    0A2D  89 56	FC			 mov	 FSector,dx
+   1507	    0A30  EB 89				 jmp	 $$CalcSect
+   1508
+   1509	    0A32			 $$AddCluster:
+   1510	    0A32  66| 8B D0			 mov	 edx,eax
+   1511	    0A35  E8 FA44			 call	 FindFreeCluster
+   1512	    0A38  0F 82	0118			 jc	 $$Error4
+   1513	    0A3C  89 46	FE			 mov	 FCluster,ax
+   1514	    0A3F  66| 92			 xchg	 eax,edx
+   1515
+   1516	    0A41  65: 67| 89 14	45    +		 mov	 GS:FATBuffer[eax*2],dx
+   1517		  00004227
+   1518	    0A4A  65: 67| C7 04	55    +		 mov	 WORD PTR GS:FATBuffer[edx*2],0FFFFh
+   1519		  00004227 FFFF
+   1520
+   1521	    0A55  C7 46	F6 0001			 mov	 FFATChanged,1
+   1522
+   1523					 ; Fix FAT
+   1524	    0A5A  66| C1 E8 08			 shr	 eax,8
+   1525	    0A5E  66| C1 EA 08			 shr	 edx,8
+   1526	    0A62  66| 3B C2			 cmp	 eax,edx
+   1527	    0A65  74 42				 je	 SHORT $$FATFixed
+   1528
+   1529	    0A67  66| 50			 push	 eax
+   1530	    0A69  66| 8B F0			 mov	 esi,eax
+   1531	    0A6C  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1532	    0A72  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1533	    0A77  66| C1 E6 09			 shl	 esi,9
+   1534	    0A7B  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1535	    0A82  E8 F6E3			 call	 WriteHDDSectorBuf
+   1536	    0A85  66| 58			 pop	 eax
+   1537
+   1538	    0A87  66| 8B F2			 mov	 esi,edx
+   1539	    0A8A  66| 65: 03 16	021F		 add	 edx,GS:FATStartSect
+   1540	    0A90  66| 65: 89 16	0009		 mov	 GS:SectorAddress,edx
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 29
+hdd.ASM
+HDD
+
+
+   1541	    0A96  66| C1 E6 09			 shl	 esi,9
+   1542	    0A9A  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1543	    0AA1  E8 F6C4			 call	 WriteHDDSectorBuf
+   1544
+   1545	    0AA4  C7 46	F6 0000			 mov	 FFATChanged,0
+   1546	    0AA9			 $$FATFixed:
+   1547	    0AA9  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1548	    0AAE  66| 33 D2			 xor	 edx,edx
+   1549	    0AB1  89 56	FC			 mov	 FSector,dx
+   1550	    0AB4  E9 FF04			 jmp	 $$CalcSect
+   1551
+   1552	    0AB7			 $$WriteOK:
+   1553	    0AB7  83 7E	F6 01			 cmp	 FFATChanged,1
+   1554	    0ABB  75 25				 jne	 SHORT $$FixDir
+   1555	    0ABD  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1556	    0AC2  66| C1 E8 08			 shr	 eax,8
+   1557	    0AC6  66| 8B F0			 mov	 esi,eax
+   1558	    0AC9  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1559	    0ACF  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1560	    0AD4  66| C1 E6 09			 shl	 esi,9
+   1561	    0AD8  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1562	    0ADF  E8 F686			 call	 WriteHDDSectorBuf
+   1563
+   1564	    0AE2			 $$FixDir:
+   1565	    0AE2  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[ebx*8][TFileRec.DirItem]
+   1566		  DD 00024232
+   1567	    0AED  66| C1 E7 05			 shl	 edi,5
+   1568	    0AF1  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   1569
+   1570	    0AF8  66| 65: 67| 8B 04 DD+		 mov	 eax,GS:Files[ebx*8][TFileRec.FilePosition]
+   1571		  00024236
+   1572	    0B02  66| 65: 67| 39 47 1C		 cmp	 GS:[edi][TDirItem.DIR_FileSize],eax
+   1573	    0B08  73 2E				 jae	 $$DirFixed
+   1574	    0B0A  66| 65: 67| 89 47 1C		 mov	 GS:[edi][TDirItem.DIR_FileSize],eax
+   1575
+   1576	    0B10  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+   1577	    0B17  66| C1 EF 09			 shr	 edi,9
+   1578	    0B1B  66| 8B F7			 mov	 esi,edi
+   1579	    0B1E  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+   1580	    0B24  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+   1581	    0B2A  66| C1 E6 09			 shl	 esi,9
+   1582	    0B2E  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1583	    0B35  E8 F630			 call	 WriteHDDSectorBuf
+   1584
+   1585	    0B38			 $$DirFixed:
+   1586	    0B38  66| 33 C0			 xor	 eax,eax
+   1587	    0B3B  66| 65: 67| 89 04 DD+		 mov	 GS:Files[ebx*8][TFileRec.FilePosition],eax
+   1588		  00024236
+   1589	    0B45  66| 8B C3			 mov	 eax,ebx
+   1590	    0B48  F8				 clc
+   1591	    0B49  EB 37				 jmp	 SHORT $$End
+   1592	    0B4B			 $$Error1:
+   1593	    0B4B  F9				 stc
+   1594	    0B4C  EB 34				 jmp	 SHORT $$End
+   1595	    0B4E			 $$Error2:
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 30
+hdd.ASM
+HDD
+
+
+   1596	    0B4E  F9				 stc
+   1597	    0B4F  EB 31				 jmp	 SHORT $$End
+   1598	    0B51			 $$Error3:
+   1599	    0B51  F9				 stc
+   1600	    0B52  EB 2E				 jmp	 SHORT $$End
+   1601	    0B54			 $$Error4:
+   1602	    0B54  83 7E	F6 01			 cmp	 FFATChanged,1
+   1603	    0B58  75 25				 jne	 SHORT $$Error4_1
+   1604	    0B5A  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1605	    0B5F  66| C1 E8 08			 shr	 eax,8
+   1606	    0B63  66| 8B F0			 mov	 esi,eax
+   1607	    0B66  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1608	    0B6C  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1609	    0B71  66| C1 E6 09			 shl	 esi,9
+   1610	    0B75  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1611	    0B7C  E8 F5E9			 call	 WriteHDDSectorBuf
+   1612	    0B7F			 $$Error4_1:
+   1613	    0B7F  F9				 stc
+   1614	    0B80  EB 00				 jmp	 SHORT $$End
+   1615	    0B82			 $$End:
+   1616	    0B82  66| 59			 pop	 ecx
+1  1617	    0B84  66| 5E			 POP	 ESI
+1  1618	    0B86  66| 5F			 POP	 EDI
+1  1619	    0B88  66| 5A			 POP	 EDX
+1  1620	    0B8A  66| 5B			 POP	 EBX
+1  1621	    0B8C  0F A9				 POP	 GS
+1  1622	    0B8E  07				 POP	 ES
+1  1623	    0B8F  1F				 POP	 DS
+1  1624	    0B90  C9				 LEAVEW
+1  1625	    0B91  C3				 RET	 00000h
+   1626	    0B92			 _FileCreateSize ENDP
+   1627
+   1628					 ; Создать и открыть пустой файл (заполненный нулями) заданного	размера
+   1629					 ; В DS:EDX указатель на имя файла (ASCIZ-строка)
+   1630					 ; В ECX размер	файла
+   1631					 ; Выход без ошибки:
+   1632					 ; CF =	0, EAX = идентификатор файла
+   1633					 ; Выход с ошибкой:
+   1634					 ; CF =	1, EAX - не определён
+   1635	    0B92			 FileCreateEmpty PROC	 C FAR
+   1636						 public	 FileCreateEmpty
+   1637	    0B92  E8 0001			 call	 _FileCreateEmpty
+1  1638	    0B95  CB				 RET	 00000h
+   1639	    0B96			 FileCreateEmpty ENDP
+   1640
+   1641	    0B96			 _FileCreateEmpty	 PROC	 C NEAR
+   1642
+   1643					 LOCAL	 FCluster:WORD
+   1644					 LOCAL	 FSector:WORD
+   1645					 LOCAL	 FCount:DWORD
+   1646					 LOCAL	 FFATChanged:WORD
+   1647
+   1648						 uses	 DS,ES,GS,ebx,edx,edi,esi
+   1649
+1  1650	    0B96  C8 000A 00			 ENTERW	 0000Ah,0
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 31
+hdd.ASM
+HDD
+
+
+1  1651	    0B9A  1E				 PUSH	 DS
+1  1652	    0B9B  06				 PUSH	 ES
+1  1653	    0B9C  0F A8				 PUSH	 GS
+1  1654	    0B9E  66| 53			 PUSH	 EBX
+1  1655	    0BA0  66| 52			 PUSH	 EDX
+1  1656	    0BA2  66| 57			 PUSH	 EDI
+1  1657	    0BA4  66| 56			 PUSH	 ESI
+1  1658	    0BA6  66| 51			 push	 ecx
+   1659
+   1660	    0BA8  E8 FDA2			 call	 _FileCreateSize
+   1661					 ;	  call	  _FileCreate
+   1662	    0BAB  0F 82	021F			 jc	 $$End
+   1663
+   1664	    0BAF  66| 8B D8			 mov	 ebx,eax
+   1665
+   1666	    0BB2  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1667	    0BB7  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+   1668	    0BBC  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   1669	    0BC1  66| BF 0000000D		 mov	 edi,SectorDataBuffer
+   1670	    0BC7  66| 51			 push	 ecx
+   1671	    0BC9  66| B9 00000100		 mov	 ecx,256				 ;
+   1672	    0BCF  66| 33 C0			 xor	 eax,eax				 ;
+   1673	    0BD2  67				 db	 67h					 ;
+   1674	    0BD3  F3> AB			 rep	 stosw					 ;
+   1675	    0BD5  66| 59			 pop	 ecx
+   1676
+   1677	    0BD7  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[ebx*8][TFileRec.DirItem]
+   1678		  DD 00024232
+   1679	    0BE2  66| C1 E7 05			 shl	 edi,5
+   1680	    0BE6  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   1681
+   1682	    0BED  66| 65: 67| 0F B7 47+		 movzx	 eax,WORD PTR GS:[edi][TDirItem.DIR_FstClusLO]
+   1683		  1A
+   1684	    0BF4  89 46	FE			 mov	 FCluster,ax
+   1685	    0BF7  66| 33 D2			 xor	 edx,edx
+   1686	    0BFA  89 56	FC			 mov	 FSector,dx
+   1687	    0BFD  89 56	F6			 mov	 FFATChanged,dx
+   1688
+   1689	    0C00  66| 89 4E F8			 mov	 FCount,ecx
+   1690
+   1691	    0C04			 $$CalcSect:
+   1692	    0C04  66| 83 E8 02			 sub	 eax,2
+   1693	    0C08  66| 65: 0F B7	16    +		 movzx	 edx,WORD PTR GS:SectorsInCluster
+   1694		  0211
+   1695	    0C0F  66| F7 E2			 mul	 edx
+   1696	    0C12  66| 65: 03 06	0223		 add	 eax,GS:RootDirStartSect
+   1697	    0C18  66| 83 C0 20			 add	 eax,RootDirSize
+   1698	    0C1C  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1699					 ;
+   1700	    0C21			 $$WriteSect:
+   1701	    0C21  E8 F4E3			 call	 WriteHDDSector
+   1702	    0C24  66| BA 00000200		 mov	 edx,512
+   1703	    0C2A  66| 3B D1			 cmp	 edx,ecx
+   1704	    0C2D  76 03				 jbe	 SHORT $$IncPos
+   1705	    0C2F  66| 8B D1			 mov	 edx,ecx
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 32
+hdd.ASM
+HDD
+
+
+   1706	    0C32			 $$IncPos:
+   1707	    0C32  66| 65: 67| 01 14 DD+		 add	 GS:Files[ebx*8][TFileRec.FilePosition],edx
+   1708		  00024236
+   1709					 ;	  sub	  FCount,edx
+   1710	    0C3C  66| 2B CA			 sub	 ecx,edx
+   1711	    0C3F  0F 84	00C0			 jz	 $$WriteOK
+   1712	    0C43  8B 56	FC			 mov	 dx,FSector
+   1713	    0C46  42				 inc	 dx
+   1714	    0C47  65: 3B 16 0211		 cmp	 dx,GS:SectorsInCluster
+   1715	    0C4C  73 0B				 jae	 SHORT $$NextCluster
+   1716	    0C4E  89 56	FC			 mov	 FSector,dx
+   1717	    0C51  66| 65: FF 06	0009		 inc	 DWORD PTR GS:SectorAddress
+   1718	    0C57  EB C8				 jmp	 SHORT $$WriteSect
+   1719	    0C59			 $$NextCluster:
+   1720	    0C59  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1721	    0C5E  65: 67| 83 3C	45    +		 cmp	 WORD PTR GS:FatBuffer[eax*2],0FFFFh
+   1722		  00004227 FF
+   1723	    0C68  74 14				 je	 SHORT $$AddCluster
+   1724
+   1725	    0C6A  65: 67| 8B 04	45    +		 mov	 ax,GS:FatBuffer[eax*2]
+   1726		  00004227
+   1727	    0C73  89 46	FE			 mov	 FCluster,ax
+   1728	    0C76  66| 33 D2			 xor	 edx,edx
+   1729	    0C79  89 56	FC			 mov	 FSector,dx
+   1730	    0C7C  EB 86				 jmp	 $$CalcSect
+   1731
+   1732	    0C7E			 $$AddCluster:
+   1733	    0C7E  66| 8B D0			 mov	 edx,eax
+   1734	    0C81  E8 F7F8			 call	 FindFreeCluster
+   1735	    0C84  0F 82	0118			 jc	 $$Error4
+   1736	    0C88  89 46	FE			 mov	 FCluster,ax
+   1737	    0C8B  66| 92			 xchg	 eax,edx
+   1738
+   1739	    0C8D  65: 67| 89 14	45    +		 mov	 GS:FATBuffer[eax*2],dx
+   1740		  00004227
+   1741	    0C96  65: 67| C7 04	55    +		 mov	 WORD PTR GS:FATBuffer[edx*2],0FFFFh
+   1742		  00004227 FFFF
+   1743
+   1744	    0CA1  C7 46	F6 0001			 mov	 FFATChanged,1
+   1745
+   1746					 ; Fix FAT
+   1747	    0CA6  66| C1 E8 08			 shr	 eax,8
+   1748	    0CAA  66| C1 EA 08			 shr	 edx,8
+   1749	    0CAE  66| 3B C2			 cmp	 eax,edx
+   1750	    0CB1  74 42				 je	 SHORT $$FATFixed
+   1751
+   1752	    0CB3  66| 50			 push	 eax
+   1753	    0CB5  66| 8B F0			 mov	 esi,eax
+   1754	    0CB8  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1755	    0CBE  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1756	    0CC3  66| C1 E6 09			 shl	 esi,9
+   1757	    0CC7  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1758	    0CCE  E8 F497			 call	 WriteHDDSectorBuf
+   1759	    0CD1  66| 58			 pop	 eax
+   1760
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 33
+hdd.ASM
+HDD
+
+
+   1761	    0CD3  66| 8B F2			 mov	 esi,edx
+   1762	    0CD6  66| 65: 03 16	021F		 add	 edx,GS:FATStartSect
+   1763	    0CDC  66| 65: 89 16	0009		 mov	 GS:SectorAddress,edx
+   1764	    0CE2  66| C1 E6 09			 shl	 esi,9
+   1765	    0CE6  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1766	    0CED  E8 F478			 call	 WriteHDDSectorBuf
+   1767
+   1768	    0CF0  C7 46	F6 0000			 mov	 FFATChanged,0
+   1769	    0CF5			 $$FATFixed:
+   1770	    0CF5  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1771	    0CFA  66| 33 D2			 xor	 edx,edx
+   1772	    0CFD  89 56	FC			 mov	 FSector,dx
+   1773	    0D00  E9 FF01			 jmp	 $$CalcSect
+   1774
+   1775	    0D03			 $$WriteOK:
+   1776	    0D03  83 7E	F6 01			 cmp	 FFATChanged,1
+   1777	    0D07  75 25				 jne	 SHORT $$FixDir
+   1778	    0D09  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1779	    0D0E  66| C1 E8 08			 shr	 eax,8
+   1780	    0D12  66| 8B F0			 mov	 esi,eax
+   1781	    0D15  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1782	    0D1B  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1783	    0D20  66| C1 E6 09			 shl	 esi,9
+   1784	    0D24  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1785	    0D2B  E8 F43A			 call	 WriteHDDSectorBuf
+   1786
+   1787	    0D2E			 $$FixDir:
+   1788	    0D2E  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[ebx*8][TFileRec.DirItem]
+   1789		  DD 00024232
+   1790	    0D39  66| C1 E7 05			 shl	 edi,5
+   1791	    0D3D  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   1792
+   1793	    0D44  66| 65: 67| 8B 04 DD+		 mov	 eax,GS:Files[ebx*8][TFileRec.FilePosition]
+   1794		  00024236
+   1795	    0D4E  66| 65: 67| 39 47 1C		 cmp	 GS:[edi][TDirItem.DIR_FileSize],eax
+   1796	    0D54  73 2E				 jae	 $$DirFixed
+   1797	    0D56  66| 65: 67| 89 47 1C		 mov	 GS:[edi][TDirItem.DIR_FileSize],eax
+   1798
+   1799	    0D5C  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+   1800	    0D63  66| C1 EF 09			 shr	 edi,9
+   1801	    0D67  66| 8B F7			 mov	 esi,edi
+   1802	    0D6A  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+   1803	    0D70  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+   1804	    0D76  66| C1 E6 09			 shl	 esi,9
+   1805	    0D7A  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1806	    0D81  E8 F3E4			 call	 WriteHDDSectorBuf
+   1807
+   1808	    0D84			 $$DirFixed:
+   1809	    0D84  66| 33 C0			 xor	 eax,eax
+   1810	    0D87  66| 65: 67| 89 04 DD+		 mov	 GS:Files[ebx*8][TFileRec.FilePosition],eax
+   1811		  00024236
+   1812	    0D91  66| 8B C3			 mov	 eax,ebx
+   1813	    0D94  F8				 clc
+   1814	    0D95  EB 37				 jmp	 SHORT $$End
+   1815	    0D97			 $$Error1:
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 34
+hdd.ASM
+HDD
+
+
+   1816	    0D97  F9				 stc
+   1817	    0D98  EB 34				 jmp	 SHORT $$End
+   1818	    0D9A			 $$Error2:
+   1819	    0D9A  F9				 stc
+   1820	    0D9B  EB 31				 jmp	 SHORT $$End
+   1821	    0D9D			 $$Error3:
+   1822	    0D9D  F9				 stc
+   1823	    0D9E  EB 2E				 jmp	 SHORT $$End
+   1824	    0DA0			 $$Error4:
+   1825	    0DA0  83 7E	F6 01			 cmp	 FFATChanged,1
+   1826	    0DA4  75 25				 jne	 SHORT $$Error4_1
+   1827	    0DA6  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   1828	    0DAB  66| C1 E8 08			 shr	 eax,8
+   1829	    0DAF  66| 8B F0			 mov	 esi,eax
+   1830	    0DB2  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   1831	    0DB8  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   1832	    0DBD  66| C1 E6 09			 shl	 esi,9
+   1833	    0DC1  66| 81 C6 00004227		 add	 esi,FATBuffer
+   1834	    0DC8  E8 F39D			 call	 WriteHDDSectorBuf
+   1835	    0DCB			 $$Error4_1:
+   1836	    0DCB  F9				 stc
+   1837	    0DCC  EB 00				 jmp	 SHORT $$End
+   1838	    0DCE			 $$End:
+   1839	    0DCE  66| 59			 pop	 ecx
+1  1840	    0DD0  66| 5E			 POP	 ESI
+1  1841	    0DD2  66| 5F			 POP	 EDI
+1  1842	    0DD4  66| 5A			 POP	 EDX
+1  1843	    0DD6  66| 5B			 POP	 EBX
+1  1844	    0DD8  0F A9				 POP	 GS
+1  1845	    0DDA  07				 POP	 ES
+1  1846	    0DDB  1F				 POP	 DS
+1  1847	    0DDC  C9				 LEAVEW
+1  1848	    0DDD  C3				 RET	 00000h
+   1849	    0DDE			 _FileCreateEmpty	 ENDP
+   1850
+   1851					 ; Закрыть файл
+   1852					 ; EAX - идентификатор файла
+   1853					 ; Выход без ошибки:
+   1854					 ; CF =	0
+   1855					 ; Выход с ошибкой:
+   1856					 ; CF =	1
+   1857	    0DDE			 FileClose	 PROC	 C FAR
+   1858						 public	 FileClose
+   1859	    0DDE  E8 0001			 call	 _FileClose
+1  1860	    0DE1  CB				 RET	 00000h
+   1861	    0DE2			 FileClose	 ENDP
+   1862
+   1863	    0DE2			 _FileClose	 PROC	 C NEAR
+   1864						 uses	 GS
+1  1865	    0DE2  0F A8				 PUSH	 GS
+1  1866	    0DE4  66| 83 F8 08			 cmp	 eax,MaxFiles
+   1867	    0DE8  73 14				 jae	 SHORT $$End
+   1868	    0DEA  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1869	    0DEF  65: 67| C7 04	C5    +		 mov	 WORD PTR GS:Files[eax*8][TFileRec.DirItem],0FFFFh
+   1870		  00024232 FFFF
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 35
+hdd.ASM
+HDD
+
+
+   1871	    0DFA  F8				 clc
+   1872	    0DFB  EB 01				 jmp	 SHORT $$End
+   1873	    0DFD			 $$Error1:
+   1874	    0DFD  F9				 stc
+   1875	    0DFE			 $$End:
+1  1876	    0DFE  0F A9				 POP	 GS
+1  1877	    0E00  C3				 RET	 00000h
+   1878	    0E01			 _FileClose	 ENDP
+   1879
+   1880					 ; Получить размер файла
+   1881					 ; EAX - идентификатор файла
+   1882					 ; Выход без ошибки:
+   1883					 ; CF =	0
+   1884					 ; ECX - размер	файла
+   1885					 ; Выход с ошибкой:
+   1886					 ; CF =	1
+   1887	    0E01			 FileSize	 PROC	 C FAR
+   1888						 public	 FileSize
+   1889	    0E01  E8 0001			 call	 _FileSize
+1  1890	    0E04  CB				 RET	 00000h
+   1891	    0E05			 FileSize	 ENDP
+   1892
+   1893	    0E05			 _FileSize	 PROC	 C NEAR
+   1894						 uses	 GS,esi
+1  1895	    0E05  0F A8				 PUSH	 GS
+1  1896	    0E07  66| 56			 PUSH	 ESI
+1  1897	    0E09  66| 83 F8 08			 cmp	 eax,MaxFiles
+   1898	    0E0D  73 30				 jae	 SHORT $$Error1
+   1899	    0E0F  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1900	    0E14  65: 67| 83 3C	C5    +		 cmp	 WORD PTR GS:Files[eax*8][TFileRec.DirItem],0FFFFh
+   1901		  00024232 FF
+   1902	    0E1E  74 1F				 je	 SHORT $$Error1
+   1903
+   1904	    0E20  66| 65: 67| 0F B7 34+		 movzx	 esi,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+   1905		  C5 00024232
+   1906	    0E2B  66| C1 E6 05			 shl	 esi,5
+   1907	    0E2F  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1908	    0E36  66| 65: 67| 8B 4E 1C		 mov	 ecx,GS:[esi][TDirItem.DIR_FileSize]
+   1909	    0E3C  F8				 clc
+   1910	    0E3D  EB 01				 jmp	 SHORT $$End
+   1911	    0E3F			 $$Error1:
+   1912	    0E3F  F9				 stc
+   1913	    0E40			 $$End:
+1  1914	    0E40  66| 5E			 POP	 ESI
+1  1915	    0E42  0F A9				 POP	 GS
+1  1916	    0E44  C3				 RET	 00000h
+   1917	    0E45			 _FileSize	 ENDP
+   1918
+   1919					 ; Установить указатель	чтения/записи в	файле
+   1920					 ; EAX - идентификатор файла
+   1921					 ; ECX - расстояние от начала файла
+   1922					 ; Выход без ошибки:
+   1923					 ; CF =	0
+   1924					 ; Выход с ошибкой:
+   1925					 ; CF =	1
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 36
+hdd.ASM
+HDD
+
+
+   1926	    0E45			 FileSeek	 PROC	 C FAR
+   1927						 public	 FileSeek
+   1928	    0E45  E8 0001			 call	 _FileSeek
+1  1929	    0E48  CB				 RET	 00000h
+   1930	    0E49			 FileSeek	 ENDP
+   1931
+   1932	    0E49			 _FileSeek	 PROC	 C NEAR
+   1933						 uses	 GS,esi
+1  1934	    0E49  0F A8				 PUSH	 GS
+1  1935	    0E4B  66| 56			 PUSH	 ESI
+1  1936	    0E4D  66| 83 F8 08			 cmp	 eax,MaxFiles
+   1937	    0E51  73 3C				 jae	 SHORT $$Error1
+   1938	    0E53  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   1939	    0E58  65: 67| 83 3C	C5    +		 cmp	 WORD PTR GS:Files[eax*8][TFileRec.DirItem],0FFFFh
+   1940		  00024232 FF
+   1941	    0E62  74 2B				 je	 SHORT $$Error1
+   1942
+   1943	    0E64  66| 65: 67| 0F B7 34+		 movzx	 esi,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+   1944		  C5 00024232
+   1945	    0E6F  66| C1 E6 05			 shl	 esi,5
+   1946	    0E73  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   1947	    0E7A  66| 65: 67| 39 4E 1C		 cmp	 GS:[esi][TDirItem.DIR_FileSize],ecx
+   1948	    0E80  72 0D				 jb	 SHORT $$Error1
+   1949	    0E82  66| 65: 67| 89 0C C5+		 mov	 GS:Files[eax*8][TFileRec.FilePosition],ecx
+   1950		  00024236
+   1951	    0E8C  F8				 clc
+   1952	    0E8D  EB 01				 jmp	 SHORT $$End
+   1953	    0E8F			 $$Error1:
+   1954	    0E8F  F9				 stc
+   1955	    0E90			 $$End:
+1  1956	    0E90  66| 5E			 POP	 ESI
+1  1957	    0E92  0F A9				 POP	 GS
+1  1958	    0E94  C3				 RET	 00000h
+   1959	    0E95			 _FileSeek	 ENDP
+   1960
+   1961					 ; Получить указатель чтения/записи в файле
+   1962					 ; EAX - идентификатор файла
+   1963					 ; Выход без ошибки:
+   1964					 ; CF =	0
+   1965					 ; ECX - указатель чтения/записи в файле
+   1966					 ; Выход с ошибкой:
+   1967					 ; CF =	1
+   1968	    0E95			 FilePos	 PROC	 C FAR
+   1969						 public	 FilePos
+   1970	    0E95  E8 0001			 call	 _FilePos
+1  1971	    0E98  CB				 RET	 00000h
+   1972	    0E99			 FilePos	 ENDP
+   1973
+   1974	    0E99			 _FilePos	 PROC	 C NEAR
+   1975						 uses	 GS
+   1976
+1  1977	    0E99  0F A8				 PUSH	 GS
+1  1978	    0E9B  66| 83 F8 08			 cmp	 eax,MaxFiles
+   1979	    0E9F  73 1E				 jae	 SHORT $$Error1
+   1980	    0EA1  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 37
+hdd.ASM
+HDD
+
+
+   1981	    0EA6  65: 67| 83 3C	C5    +		 cmp	 WORD PTR GS:Files[eax*8][TFileRec.DirItem],0FFFFh
+   1982		  00024232 FF
+   1983	    0EB0  74 0D				 je	 SHORT $$Error1
+   1984
+   1985	    0EB2  66| 65: 67| 8B 0C C5+		 mov	 ecx,GS:Files[eax*8][TFileRec.FilePosition]
+   1986		  00024236
+   1987	    0EBC  F8				 clc
+   1988	    0EBD  EB 01				 jmp	 SHORT $$End
+   1989	    0EBF			 $$Error1:
+   1990	    0EBF  F9				 stc
+   1991	    0EC0			 $$End:
+1  1992	    0EC0  0F A9				 POP	 GS
+1  1993	    0EC2  C3				 RET	 00000h
+   1994	    0EC3			 _FilePos	 ENDP
+   1995
+   1996					 ; Поиск кластера
+   1997					 ; EAX - номер кластера	от начала файла
+   1998					 ; ESI - указатель на элемент каталога
+   1999					 ; Выход без ошибки:
+   2000					 ; CF =	0
+   2001					 ; EAX - номер кластера
+   2002					 ; Выход с ошибкой:
+   2003					 ; EAX - номер последнего кластера файла
+   2004					 ; CF =	1
+   2005	    0EC3			 GetCluster	 PROC	 C NEAR
+   2006						 uses	 ecx
+   2007
+1  2008	    0EC3  66| 51			 PUSH	 ECX
+1  2009	    0EC5  8B C8				 mov	 cx,ax
+   2010	    0EC7  66| 65: 67| 0F B7 46+		 movzx	 eax,WORD PTR GS:[esi][TDirItem.DIR_FstClusLO]
+   2011		  1A
+   2012
+   2013	    0ECE			 $$FindCluster:
+   2014	    0ECE  0B C9				 or	 cx,cx
+   2015	    0ED0  74 1A				 jz	 SHORT $$FindOK
+   2016
+   2017	    0ED2  65: 67| 83 3C	45    +		 cmp	 WORD PTR GS:FatBuffer[eax*2],0FFFFh
+   2018		  00004227 FF
+   2019	    0EDC  74 11				 jz	 SHORT $$Error1
+   2020	    0EDE  66| 65: 67| 0F B7 04+		 movzx	 eax,WORD PTR GS:FatBuffer[eax*2]
+   2021		  45 00004227
+   2022	    0EE9  49				 dec	 cx
+   2023	    0EEA  EB E2				 jmp	 SHORT $$FindCluster
+   2024
+   2025	    0EEC			 $$FindOK:
+   2026	    0EEC  F8				 clc
+   2027	    0EED  EB 01				 jmp	 SHORT $$End
+   2028	    0EEF			 $$Error1:
+   2029	    0EEF  F9				 stc
+   2030	    0EF0			 $$End:
+1  2031	    0EF0  66| 59			 POP	 ECX
+1  2032	    0EF2  C3				 RET	 00000h
+   2033	    0EF3			 GetCluster	 ENDP
+   2034
+   2035					 ; Чтение из файла
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 38
+hdd.ASM
+HDD
+
+
+   2036					 ; EAX - идентификатор файла
+   2037					 ; DS:EDX - указатель на буфер приёма данных
+   2038					 ; ECX - число байт
+   2039					 ; Выход без ошибки:
+   2040					 ; CF =	0
+   2041					 ; Выход с ошибкой:
+   2042					 ; CF =	1
+   2043	    0EF3			 FileRead	 PROC	 C FAR
+   2044						 public	 FileRead
+   2045	    0EF3  E8 0001			 call	 _FileRead
+1  2046	    0EF6  CB				 RET	 00000h
+   2047	    0EF7			 FileRead	 ENDP
+   2048
+   2049	    0EF7			 _FileRead	 PROC	 C NEAR
+   2050
+   2051					 LOCAL	 FCluster:WORD
+   2052					 LOCAL	 FSector:WORD
+   2053					 LOCAL	 FCount:DWORD
+   2054
+   2055						 uses	 DS,ES,GS,eax,ebx,edx,edi,esi
+   2056
+1  2057	    0EF7  C8 0008 00			 ENTERW	 00008h,0
+1  2058	    0EFB  1E				 PUSH	 DS
+1  2059	    0EFC  06				 PUSH	 ES
+1  2060	    0EFD  0F A8				 PUSH	 GS
+1  2061	    0EFF  66| 50			 PUSH	 EAX
+1  2062	    0F01  66| 53			 PUSH	 EBX
+1  2063	    0F03  66| 52			 PUSH	 EDX
+1  2064	    0F05  66| 57			 PUSH	 EDI
+1  2065	    0F07  66| 56			 PUSH	 ESI
+1  2066	    0F09  66| 51			 push	 ecx
+   2067
+   2068	    0F0B  66| 83 F8 08			 cmp	 eax,MaxFiles
+   2069	    0F0F  0F 83	0124			 jae	 $$Error1
+   2070	    0F13  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   2071	    0F18  65: 67| 83 3C	C5    +		 cmp	 WORD PTR GS:Files[eax*8][TFileRec.DirItem],0FFFFh
+   2072		  00024232 FF
+   2073	    0F22  0F 84	0111			 je	 $$Error1
+   2074
+   2075	    0F26  1E				 push	 DS
+   2076	    0F27  07				 pop	 ES
+   2077	    0F28  66| 8B FA			 mov	 edi,edx
+   2078
+   2079	    0F2B  66| 65: 67| 0F B7 34+		 movzx	 esi,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+   2080		  C5 00024232
+   2081	    0F36  66| C1 E6 05			 shl	 esi,5
+   2082	    0F3A  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   2083
+   2084	    0F41  66| 8B D8			 mov	 ebx,eax
+   2085	    0F44  66| 65: 67| 8B 04 DD+		 mov	 eax,GS:Files[ebx*8][TFileRec.FilePosition]
+   2086		  00024236
+   2087	    0F4E  66| 65: 67| 39 46 1C		 cmp	 GS:[esi][TDirItem.DIR_FileSize],eax
+   2088	    0F54  0F 86	00DF			 jbe	 $$Error1
+   2089
+   2090	    0F58  66| 67| 8D 14	08		 lea	 edx,[eax+ecx]
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 39
+hdd.ASM
+HDD
+
+
+   2091	    0F5D  66| 65: 67| 3B 56 1C		 cmp	 edx,GS:[esi][TDirItem.DIR_FileSize]
+   2092	    0F63  76 09				 jbe	 SHORT $$SetCount
+   2093	    0F65  66| 65: 67| 8B 4E 1C		 mov	 ecx,GS:[esi][TDirItem.DIR_FileSize]
+   2094	    0F6B  66| 2B C8			 sub	 ecx,eax
+   2095	    0F6E			 $$SetCount:
+   2096	    0F6E  66| 89 4E F8			 mov	 FCount,ecx
+   2097
+   2098	    0F72  66| C1 E8 09			 shr	 eax,9
+   2099	    0F76  66| 33 D2			 xor	 edx,edx
+   2100	    0F79  66| 53			 push	 ebx
+   2101	    0F7B  66| 65: 0F B7	1E    +		 movzx	 ebx,WORD PTR GS:SectorsInCluster
+   2102		  0211
+   2103	    0F82  66| F7 F3			 div	 ebx
+   2104	    0F85  66| 5B			 pop	 ebx
+   2105	    0F87  89 56	FC			 mov	 FSector,dx
+   2106
+   2107	    0F8A  E8 FF36			 call	 GetCluster
+   2108
+   2109					 ;	  add	  ax,GS:[esi][TDirItem.DIR_FstClusLO]
+   2110					 ;	  cmp	  ax,GS:[esi][TDirItem.DIR_FstClusLO]
+   2111					 ;	  je	  SHORT	$$SetCluster
+   2112					 ;	  movzx	  eax,WORD PTR GS:FatBuffer[eax*2-2]
+   2113					 ;$$SetCluster:
+   2114	    0F8D  89 46	FE			 mov	 FCluster,ax
+   2115	    0F90  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   2116	    0F95			 $$CalcSect:
+   2117	    0F95  66| 83 E8 02			 sub	 eax,2
+   2118	    0F99  66| 52			 push	 edx
+   2119	    0F9B  66| 65: 0F B7	16    +		 movzx	 edx,WORD PTR GS:SectorsInCluster
+   2120		  0211
+   2121	    0FA2  66| F7 E2			 mul	 edx
+   2122	    0FA5  66| 5A			 pop	 edx
+   2123	    0FA7  66| 65: 03 06	0223		 add	 eax,GS:RootDirStartSect
+   2124	    0FAD  66| 83 C0 20			 add	 eax,RootDirSize
+   2125	    0FB1  66| 03 C2			 add	 eax,edx
+   2126	    0FB4  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   2127	    0FB9			 $$ReadSect:
+   2128	    0FB9  E8 F0EA			 call	 ReadHDDSector
+   2129
+   2130	    0FBC  66| 51			 push	 ecx
+   2131					 ;	  push	  esi
+   2132	    0FBE  66| BE 0000000D		 mov	 esi,SectorDataBuffer
+   2133	    0FC4  66| 65: 67| 8B 14 DD+		 mov	 edx,GS:Files[ebx*8][TFileRec.FilePosition]
+   2134		  00024236
+   2135	    0FCE  66| 81 E2 000001FF		 and	 edx,511
+   2136	    0FD5  66| 03 F2			 add	 esi,edx
+   2137	    0FD8  66| B8 00000200		 mov	 eax,512
+   2138	    0FDE  66| 2B C2			 sub	 eax,edx
+   2139	    0FE1  66| 3B C1			 cmp	 eax,ecx
+   2140	    0FE4  73 03				 jae	 SHORT $$MoveData
+   2141	    0FE6  66| 8B C8			 mov	 ecx,eax
+   2142	    0FE9			 $$MoveData:
+   2143	    0FE9  66| 8B D1			 mov	 edx,ecx
+   2144	    0FEC  67				 db	 67h
+   2145	    0FED  F3> A4			 rep	 movsb
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 40
+hdd.ASM
+HDD
+
+
+   2146					 ;	  pop	  esi
+   2147	    0FEF  66| 59			 pop	 ecx
+   2148
+   2149	    0FF1  66| 65: 67| 01 14 DD+		 add	 GS:Files[ebx*8][TFileRec.FilePosition],edx
+   2150		  00024236
+   2151	    0FFB  66| 29 56 F8			 sub	 FCount,edx
+   2152	    0FFF  66| 2B CA			 sub	 ecx,edx
+   2153	    1002  74 30				 jz	 SHORT $$ReadOK
+   2154					 ;	  movzx	  eax,FCluster
+   2155					 ;	  movzx	  edx,FSector
+   2156					 ;	  inc	  edx
+   2157	    1004  8B 56	FC			 mov	 dx,FSector
+   2158	    1007  42				 inc	 dx
+   2159	    1008  65: 3B 16 0211		 cmp	 dx,GS:SectorsInCluster
+   2160	    100D  73 0B				 jae	 SHORT $$NextCluster
+   2161	    100F  89 56	FC			 mov	 FSector,dx
+   2162	    1012  66| 65: FF 06	0009		 inc	 DWORD PTR GS:SectorAddress
+   2163
+   2164	    1018  EB 9F				  jmp	  SHORT	$$ReadSect
+   2165					 ;	  jmp	  $$CalcSect
+   2166	    101A			 $$NextCluster:
+   2167	    101A  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   2168	    101F  65: 67| 8B 04	45    +		 mov	 ax,GS:FatBuffer[eax*2]
+   2169		  00004227
+   2170	    1028  89 46	FE			 mov	 FCluster,ax
+   2171	    102B  66| 33 D2			 xor	 edx,edx
+   2172	    102E  89 56	FC			 mov	 FSector,dx
+   2173	    1031  E9 FF61			 jmp	 $$CalcSect
+   2174	    1034			 $$ReadOK:
+   2175
+   2176	    1034  F8				 clc
+   2177	    1035  EB 01				 jmp	 SHORT $$End
+   2178	    1037			 $$Error1:
+   2179	    1037  F9				 stc
+   2180	    1038			 $$End:
+   2181	    1038  66| 59			 pop	 ecx
+1  2182	    103A  66| 5E			 POP	 ESI
+1  2183	    103C  66| 5F			 POP	 EDI
+1  2184	    103E  66| 5A			 POP	 EDX
+1  2185	    1040  66| 5B			 POP	 EBX
+1  2186	    1042  66| 58			 POP	 EAX
+1  2187	    1044  0F A9				 POP	 GS
+1  2188	    1046  07				 POP	 ES
+1  2189	    1047  1F				 POP	 DS
+1  2190	    1048  C9				 LEAVEW
+1  2191	    1049  C3				 RET	 00000h
+   2192	    104A			 _FileRead	 ENDP
+   2193
+   2194					 ; Запись в файл
+   2195					 ; EAX - идентификатор файла
+   2196					 ; DS:EDX - указатель на буфер с данными
+   2197					 ; ECX - число байт
+   2198					 ; Выход без ошибки:
+   2199					 ; CF =	0
+   2200					 ; Выход с ошибкой:
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 41
+hdd.ASM
+HDD
+
+
+   2201					 ; CF =	1
+   2202	    104A			 FileWrite	 PROC	 C FAR
+   2203						 public	 FileWrite
+   2204	    104A  E8 0001			 call	 _FileWrite
+1  2205	    104D  CB				 RET	 00000h
+   2206	    104E			 FileWrite	 ENDP
+   2207
+   2208	    104E			 _FileWrite	 PROC	 C NEAR
+   2209
+   2210					 LOCAL	 FCluster:WORD
+   2211					 LOCAL	 FSector:WORD
+   2212					 LOCAL	 FCount:DWORD
+   2213					 LOCAL	 FDirPtr:DWORD
+   2214
+   2215						 uses	 DS,ES,GS,eax,ebx,edx,edi,esi
+   2216
+1  2217	    104E  C8 000C 00			 ENTERW	 0000Ch,0
+1  2218	    1052  1E				 PUSH	 DS
+1  2219	    1053  06				 PUSH	 ES
+1  2220	    1054  0F A8				 PUSH	 GS
+1  2221	    1056  66| 50			 PUSH	 EAX
+1  2222	    1058  66| 53			 PUSH	 EBX
+1  2223	    105A  66| 52			 PUSH	 EDX
+1  2224	    105C  66| 57			 PUSH	 EDI
+1  2225	    105E  66| 56			 PUSH	 ESI
+1  2226	    1060  66| 51			 push	 ecx
+   2227
+   2228	    1062  66| 83 F8 08			 cmp	 eax,MaxFiles
+   2229	    1066  0F 83	0216			 jae	 $$Error1
+   2230	    106A  36: 8E 2E 0000e		 mov	 GS,SS:SEG_HDD_HEAP
+   2231	    106F  65: 67| 83 3C	C5    +		 cmp	 WORD PTR GS:Files[eax*8][TFileRec.DirItem],0FFFFh
+   2232		  00024232 FF
+   2233	    1079  0F 84	0206			 je	 $$Error2
+   2234
+   2235	    107D  36: 8E 06 0000e		 mov	 ES,SS:SEG_HDD_HEAP
+   2236	    1082  66| 8B F2			 mov	 esi,edx
+   2237
+   2238	    1085  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[eax*8][TFileRec.DirItem]
+   2239		  C5 00024232
+   2240	    1090  66| C1 E7 05			 shl	 edi,5
+   2241	    1094  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   2242
+   2243	    109B  66| 8B D8			 mov	 ebx,eax
+   2244	    109E  66| 65: 67| 8B 04 DD+		 mov	 eax,GS:Files[ebx*8][TFileRec.FilePosition]
+   2245		  00024236
+   2246	    10A8  66| 65: 67| 39 47 1C		 cmp	 GS:[edi][TDirItem.DIR_FileSize],eax
+   2247	    10AE  0F 82	01D4			 jb	 $$Error3
+   2248
+   2249	    10B2  66| 89 4E F8			 mov	 FCount,ecx
+   2250
+   2251	    10B6  66| C1 E8 09			 shr	 eax,9
+   2252	    10BA  66| 33 D2			 xor	 edx,edx
+   2253	    10BD  66| 53			 push	 ebx
+   2254	    10BF  66| 65: 0F B7	1E    +		 movzx	 ebx,WORD PTR GS:SectorsInCluster
+   2255		  0211
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 42
+hdd.ASM
+HDD
+
+
+   2256	    10C6  66| F7 F3			 div	 ebx
+   2257	    10C9  66| 5B			 pop	 ebx
+   2258	    10CB  89 56	FC			 mov	 FSector,dx
+   2259
+   2260	    10CE  66| 56			 push	 esi
+   2261	    10D0  66| 8B F7			 mov	 esi,edi
+   2262	    10D3  E8 FDED			 call	 GetCluster
+   2263	    10D6  66| 5E			 pop	 esi
+   2264	    10D8  0F 82	00B8			 jc	 $$AddCluster
+   2265	    10DC			 $$SetCluster:
+   2266	    10DC  89 46	FE			 mov	 FCluster,ax
+   2267
+   2268					 ;	  add	  ax,GS:[edi][TDirItem.DIR_FstClusLO]
+   2269					 ;	  cmp	  ax,GS:[edi][TDirItem.DIR_FstClusLO]
+   2270					 ;	  je	  SHORT	$$SetCluster
+   2271					 ;	  dec	  eax
+   2272					 ;	  cmp	  WORD PTR GS:FatBuffer[eax*2],0FFFFh
+   2273					 ;	  je	  $$AddCluster
+   2274					 ;	  movzx	  eax,WORD PTR GS:FatBuffer[eax*2]
+   2275
+   2276					 ;$$SetCluster:
+   2277					 ;	  mov	  FCluster,ax
+   2278	    10DF			 $$CalcSect:
+   2279	    10DF  66| 83 E8 02			 sub	 eax,2
+   2280	    10E3  66| 52			 push	 edx
+   2281	    10E5  66| 65: 0F B7	16    +		 movzx	 edx,WORD PTR GS:SectorsInCluster
+   2282		  0211
+   2283	    10EC  66| F7 E2			 mul	 edx
+   2284	    10EF  66| 5A			 pop	 edx
+   2285	    10F1  66| 65: 03 06	0223		 add	 eax,GS:RootDirStartSect
+   2286	    10F7  66| 83 C0 20			 add	 eax,RootDirSize
+   2287	    10FB  66| 03 C2			 add	 eax,edx
+   2288	    10FE  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   2289					 ;
+   2290	    1103			 $$WriteSect:
+   2291	    1103  66| 51			 push	 ecx
+   2292	    1105  66| 65: 67| 8B 3C DD+		 mov	 edi,GS:Files[ebx*8][TFileRec.FilePosition]
+   2293		  00024236
+   2294	    110F  66| 81 E7 000001FF		 and	 edi,511
+   2295	    1116  66| B8 00000200		 mov	 eax,512
+   2296	    111C  66| 2B C7			 sub	 eax,edi
+   2297	    111F  66| 3B C1			 cmp	 eax,ecx
+   2298	    1122  73 03				 jae	 SHORT $$ReadSect
+   2299	    1124  66| 8B C8			 mov	 ecx,eax
+   2300	    1127			 $$ReadSect:
+   2301	    1127  66| 0B FF			 or	 edi,edi
+   2302	    112A  75 09				 jnz	 SHORT $$ReadSect1
+   2303	    112C  66| 81 F9 00000200		 cmp	 ecx,512
+   2304	    1133  74 03				 je	 SHORT $$MoveData
+   2305	    1135			 $$ReadSect1:
+   2306	    1135  E8 EF6E			 call	 ReadHDDSector
+   2307	    1138			 $$MoveData:
+   2308	    1138  66| 8B D1			 mov	 edx,ecx
+   2309	    113B  66| 83 C7 0D			 add	 edi,SectorDataBuffer
+   2310	    113F  67				 db	 67h
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 43
+hdd.ASM
+HDD
+
+
+   2311	    1140  F3> A4			 rep	 movsb
+   2312					 ;
+   2313	    1142  E8 EFC2			 call	 WriteHDDSector
+   2314	    1145  66| 59			 pop	 ecx
+   2315	    1147  66| 65: 67| 01 14 DD+		 add	 GS:Files[ebx*8][TFileRec.FilePosition],edx
+   2316		  00024236
+   2317					 ;	  sub	  FCount,edx
+   2318	    1151  66| 2B CA			 sub	 ecx,edx
+   2319	    1154  0F 84	00C8			 jz	 $$WriteOK
+   2320	    1158  8B 56	FC			 mov	 dx,FSector
+   2321	    115B  42				 inc	 dx
+   2322	    115C  65: 3B 16 0211		 cmp	 dx,GS:SectorsInCluster
+   2323	    1161  73 0B				 jae	 SHORT $$NextCluster
+   2324	    1163  89 56	FC			 mov	 FSector,dx
+   2325	    1166  66| 65: FF 06	0009		 inc	 DWORD PTR GS:SectorAddress
+   2326	    116C  EB 95				 jmp	 SHORT $$WriteSect
+   2327	    116E			 $$NextCluster:
+   2328	    116E  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   2329	    1173  65: 67| 83 3C	45    +		 cmp	 WORD PTR GS:FatBuffer[eax*2],0FFFFh
+   2330		  00004227 FF
+   2331	    117D  74 15				 je	 SHORT $$AddCluster
+   2332
+   2333	    117F  65: 67| 8B 04	45    +		 mov	 ax,GS:FatBuffer[eax*2]
+   2334		  00004227
+   2335	    1188  89 46	FE			 mov	 FCluster,ax
+   2336	    118B  66| 33 D2			 xor	 edx,edx
+   2337	    118E  89 56	FC			 mov	 FSector,dx
+   2338	    1191  E9 FF4B			 jmp	 $$CalcSect
+   2339
+   2340	    1194			 $$AddCluster:
+   2341	    1194  66| 8B D0			 mov	 edx,eax
+   2342	    1197  E8 F2E2			 call	 FindFreeCluster
+   2343	    119A  0F 82	00EB			 jc	 $$Error4
+   2344	    119E  89 46	FE			 mov	 FCluster,ax
+   2345	    11A1  66| 92			 xchg	 eax,edx
+   2346
+   2347	    11A3  65: 67| 89 14	45    +		 mov	 GS:FATBuffer[eax*2],dx
+   2348		  00004227
+   2349	    11AC  65: 67| C7 04	55    +		 mov	 WORD PTR GS:FATBuffer[edx*2],0FFFFh
+   2350		  00004227 FFFF
+   2351
+   2352					 ; Fix FAT
+   2353	    11B7  1E				 push	 DS
+   2354	    11B8  66| 56			 push	 esi
+   2355	    11BA  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   2356	    11BF  66| D1 E0			 shl	 eax,1
+   2357	    11C2  66| C1 E8 09			 shr	 eax,9
+   2358	    11C6  66| 50			 push	 eax
+   2359	    11C8  66| 8B F0			 mov	 esi,eax
+   2360	    11CB  66| 65: 03 06	021F		 add	 eax,GS:FATStartSect
+   2361	    11D1  66| 65: A3 0009		 mov	 GS:SectorAddress,eax
+   2362	    11D6  66| C1 E6 09			 shl	 esi,9
+   2363	    11DA  66| 81 C6 00004227		 add	 esi,FATBuffer
+   2364	    11E1  E8 EF84			 call	 WriteHDDSectorBuf
+   2365	    11E4  66| 58			 pop	 eax
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 44
+hdd.ASM
+HDD
+
+
+   2366
+   2367	    11E6  66| D1 E2			 shl	 edx,1
+   2368	    11E9  66| C1 EA 09			 shr	 edx,9
+   2369	    11ED  66| 3B C2			 cmp	 eax,edx
+   2370	    11F0  74 1D				 je	 SHORT $$FATFixed
+   2371	    11F2  66| 8B F2			 mov	 esi,edx
+   2372	    11F5  66| 65: 03 16	021F		 add	 edx,GS:FATStartSect
+   2373	    11FB  66| 65: 89 16	0009		 mov	 GS:SectorAddress,edx
+   2374	    1201  66| C1 E6 09			 shl	 esi,9
+   2375	    1205  66| 81 C6 00004227		 add	 esi,FATBuffer
+   2376	    120C  E8 EF59			 call	 WriteHDDSectorBuf
+   2377	    120F			 $$FATFixed:
+   2378	    120F  66| 5E			 pop	 esi
+   2379	    1211  1F				 pop	 DS
+   2380	    1212  66| 0F B7 46 FE		 movzx	 eax,FCluster
+   2381	    1217  66| 33 D2			 xor	 edx,edx
+   2382	    121A  89 56	FC			 mov	 FSector,dx
+   2383	    121D  E9 FEBF			 jmp	 $$CalcSect
+   2384
+   2385	    1220			 $$WriteOK:
+   2386	    1220  66| 65: 67| 0F B7 3C+		 movzx	 edi,WORD PTR GS:Files[ebx*8][TFileRec.DirItem]
+   2387		  DD 00024232
+   2388	    122B  66| C1 E7 05			 shl	 edi,5
+   2389	    122F  66| 81 C7 00000227		 add	 edi,RootDirBuffer
+   2390
+   2391	    1236  66| 65: 67| 8B 04 DD+		 mov	 eax,GS:Files[ebx*8][TFileRec.FilePosition]
+   2392		  00024236
+   2393	    1240  66| 65: 67| 39 47 1C		 cmp	 GS:[edi][TDirItem.DIR_FileSize],eax
+   2394	    1246  73 35				 jae	 $$DirFixed
+   2395	    1248  66| 65: 67| 89 47 1C		 mov	 GS:[edi][TDirItem.DIR_FileSize],eax
+   2396
+   2397	    124E  1E				 push	 DS
+   2398	    124F  36: 8E 1E 0000e		 mov	 DS,SS:SEG_HDD_HEAP
+   2399	    1254  66| 81 EF 00000227		 sub	 edi,RootDirBuffer
+   2400	    125B  66| C1 EF 09			 shr	 edi,9
+   2401	    125F  66| 8B F7			 mov	 esi,edi
+   2402	    1262  66| 65: 03 3E	0223		 add	 edi,GS:RootDirStartSect
+   2403	    1268  66| 65: 89 3E	0009		 mov	 GS:SectorAddress,edi
+   2404	    126E  66| C1 E6 09			 shl	 esi,9
+   2405	    1272  66| 81 C6 00000227		 add	 esi,RootDirBuffer
+   2406	    1279  E8 EEEC			 call	 WriteHDDSectorBuf
+   2407	    127C  1F				 pop	 DS
+   2408
+   2409	    127D			 $$DirFixed:
+   2410	    127D  F8				 clc
+   2411	    127E  EB 0B				 jmp	 SHORT $$End
+   2412	    1280			 $$Error1:
+   2413	    1280  F9				 stc
+   2414	    1281  EB 08				 jmp	 SHORT $$End
+   2415	    1283			 $$Error2:
+   2416	    1283  F9				 stc
+   2417	    1284  EB 05				 jmp	 SHORT $$End
+   2418	    1286			 $$Error3:
+   2419	    1286  F9				 stc
+   2420	    1287  EB 02				 jmp	 SHORT $$End
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 45
+hdd.ASM
+HDD
+
+
+   2421	    1289			 $$Error4:
+   2422	    1289  EB 00				 jmp	 SHORT $$End
+   2423	    128B			 $$End:
+   2424	    128B  66| 59			 pop	 ecx
+1  2425	    128D  66| 5E			 POP	 ESI
+1  2426	    128F  66| 5F			 POP	 EDI
+1  2427	    1291  66| 5A			 POP	 EDX
+1  2428	    1293  66| 5B			 POP	 EBX
+1  2429	    1295  66| 58			 POP	 EAX
+1  2430	    1297  0F A9				 POP	 GS
+1  2431	    1299  07				 POP	 ES
+1  2432	    129A  1F				 POP	 DS
+1  2433	    129B  C9				 LEAVEW
+1  2434	    129C  C3				 RET	 00000h
+   2435	    129D			 _FileWrite	 ENDP
+   2436
+   2437		  =129D			 HDD_SIZE=$-HDD_CODE
+   2438	    129D			 HDD_CODE	 ENDS
+   2439
+   2440						 END
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 46
+Symbol Table
+HDD
+
+
+
+Symbol Name			  Type	 Value
+
+$$ADDCLUSTER			  Near16 HDD_CODE:0A32
+$$ADDCLUSTER			  Near16 HDD_CODE:0C7E
+$$ADDCLUSTER			  Near16 HDD_CODE:1194
+$$CALCSECT			  Near16 HDD_CODE:09BB
+$$CALCSECT			  Near16 HDD_CODE:0C04
+$$CALCSECT			  Near16 HDD_CODE:0F95
+$$CALCSECT			  Near16 HDD_CODE:10DF
+$$CLEARCLUSTER			  Near16 HDD_CODE:054F
+$$CLEARCLUSTER			  Near16 HDD_CODE:072B
+$$CLEARLASTCLUSTER		  Near16 HDD_CODE:056E
+$$CLEARLASTCLUSTER		  Near16 HDD_CODE:074A
+$$CREATEOK			  Near16 HDD_CODE:0932
+$$DIRFIXED			  Near16 HDD_CODE:0B38
+$$DIRFIXED			  Near16 HDD_CODE:0D84
+$$DIRFIXED			  Near16 HDD_CODE:127D
+$$END				  Near16 HDD_CODE:00A3
+$$END				  Near16 HDD_CODE:0104
+$$END				  Near16 HDD_CODE:0165
+$$END				  Near16 HDD_CODE:01B9
+$$END				  Near16 HDD_CODE:021A
+$$END				  Near16 HDD_CODE:0317
+$$END				  Near16 HDD_CODE:034C
+$$END				  Near16 HDD_CODE:03B3
+$$END				  Near16 HDD_CODE:040D
+$$END				  Near16 HDD_CODE:043B
+$$END				  Near16 HDD_CODE:0474
+$$END				  Near16 HDD_CODE:04B1
+$$END				  Near16 HDD_CODE:05C6
+$$END				  Near16 HDD_CODE:05E1
+$$END				  Near16 HDD_CODE:066D
+$$END				  Near16 HDD_CODE:076E
+$$END				  Near16 HDD_CODE:093B
+$$END				  Near16 HDD_CODE:0B82
+$$END				  Near16 HDD_CODE:0DCE
+$$END				  Near16 HDD_CODE:0DFE
+$$END				  Near16 HDD_CODE:0E40
+$$END				  Near16 HDD_CODE:0E90
+$$END				  Near16 HDD_CODE:0EC0
+$$END				  Near16 HDD_CODE:0EF0
+$$END				  Near16 HDD_CODE:1038
+$$END				  Near16 HDD_CODE:128B
+$$ERROR1			  Near16 HDD_CODE:007D
+$$ERROR1			  Near16 HDD_CODE:00FC
+$$ERROR1			  Near16 HDD_CODE:015D
+$$ERROR1			  Near16 HDD_CODE:01B1
+$$ERROR1			  Near16 HDD_CODE:020C
+$$ERROR1			  Near16 HDD_CODE:0316
+$$ERROR1			  Near16 HDD_CODE:04B0
+$$ERROR1			  Near16 HDD_CODE:05C5
+$$ERROR1			  Near16 HDD_CODE:066C
+$$ERROR1			  Near16 HDD_CODE:076D
+$$ERROR1			  Near16 HDD_CODE:0935
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 47
+Symbol Table
+HDD
+
+
+$$ERROR1			  Near16 HDD_CODE:0B4B
+$$ERROR1			  Near16 HDD_CODE:0D97
+$$ERROR1			  Near16 HDD_CODE:0DFD
+$$ERROR1			  Near16 HDD_CODE:0E3F
+$$ERROR1			  Near16 HDD_CODE:0E8F
+$$ERROR1			  Near16 HDD_CODE:0EBF
+$$ERROR1			  Near16 HDD_CODE:0EEF
+$$ERROR1			  Near16 HDD_CODE:1037
+$$ERROR1			  Near16 HDD_CODE:1280
+$$ERROR2			  Near16 HDD_CODE:0085
+$$ERROR2			  Near16 HDD_CODE:0937
+$$ERROR2			  Near16 HDD_CODE:0B4E
+$$ERROR2			  Near16 HDD_CODE:0D9A
+$$ERROR2			  Near16 HDD_CODE:1283
+$$ERROR3			  Near16 HDD_CODE:008D
+$$ERROR3			  Near16 HDD_CODE:0939
+$$ERROR3			  Near16 HDD_CODE:0B51
+$$ERROR3			  Near16 HDD_CODE:0D9D
+$$ERROR3			  Near16 HDD_CODE:1286
+$$ERROR4			  Near16 HDD_CODE:0095
+$$ERROR4			  Near16 HDD_CODE:0B54
+$$ERROR4			  Near16 HDD_CODE:0DA0
+$$ERROR4			  Near16 HDD_CODE:1289
+$$ERROR4_1			  Near16 HDD_CODE:0B7F
+$$ERROR4_1			  Near16 HDD_CODE:0DCB
+$$ERROR5			  Near16 HDD_CODE:009D
+$$ERROR6			  Near16 HDD_CODE:0214
+$$EXTLOOP			  Near16 HDD_CODE:03A9
+$$FATFIXED			  Near16 HDD_CODE:0AA9
+$$FATFIXED			  Near16 HDD_CODE:0CF5
+$$FATFIXED			  Near16 HDD_CODE:120F
+$$FILEFOUND			  Near16 HDD_CODE:03FE
+$$FILERECFOUND			  Near16 HDD_CODE:043A
+$$FINDCLUSTER			  Near16 HDD_CODE:0ECE
+$$FINDOK			  Near16 HDD_CODE:0EEC
+$$FIXDIR			  Near16 HDD_CODE:04F7
+$$FIXDIR			  Near16 HDD_CODE:0AE2
+$$FIXDIR			  Near16 HDD_CODE:0D2E
+$$GETEXT			  Near16 HDD_CODE:0399
+$$INCPOS			  Near16 HDD_CODE:09E6
+$$INCPOS			  Near16 HDD_CODE:0C32
+$$MOVEDATA			  Near16 HDD_CODE:0FE9
+$$MOVEDATA			  Near16 HDD_CODE:1138
+$$NAMELOOP			  Near16 HDD_CODE:038B
+$$NEWDIRITEM			  Near16 HDD_CODE:07A7
+$$NEWFILE			  Near16 HDD_CODE:07D3
+$$NEXTCLUSTER			  Near16 HDD_CODE:051F
+$$NEXTCLUSTER			  Near16 HDD_CODE:06FB
+$$NEXTCLUSTER			  Near16 HDD_CODE:0A0D
+$$NEXTCLUSTER			  Near16 HDD_CODE:0C59
+$$NEXTCLUSTER			  Near16 HDD_CODE:101A
+$$NEXTCLUSTER			  Near16 HDD_CODE:116E
+$$NEXTDIRITEM			  Near16 HDD_CODE:07AA
+$$NEXTELEMENT			  Near16 HDD_CODE:03DE
+$$NEXTFATSECTOR			  Near16 HDD_CODE:02B1
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 48
+Symbol Table
+HDD
+
+
+$$NEXTFILEREC			  Near16 HDD_CODE:0427
+$$NEXTROOTSECTOR		  Near16 HDD_CODE:02F6
+$$READOK			  Near16 HDD_CODE:1034
+$$READSECT			  Near16 HDD_CODE:0FB9
+$$READSECT			  Near16 HDD_CODE:1127
+$$READSECT1			  Near16 HDD_CODE:1135
+$$SETCLUSTER			  Near16 HDD_CODE:10DC
+$$SETCOUNT			  Near16 HDD_CODE:0F6E
+$$WAITCOMPLEET			  Near16 HDD_CODE:00D8
+$$WAITCOMPLEET			  Near16 HDD_CODE:0139
+$$WAITCOMPLEET			  Near16 HDD_CODE:019A
+$$WAITCOMPLEET			  Near16 HDD_CODE:01E4
+$$WAITHDREADY			  Near16 HDD_CODE:0028
+$$WAITNOTBSY			  Near16 HDD_CODE:0017
+$$WRITEOK			  Near16 HDD_CODE:0AB7
+$$WRITEOK			  Near16 HDD_CODE:0D03
+$$WRITEOK			  Near16 HDD_CODE:1220
+$$WRITESECT			  Near16 HDD_CODE:09D8
+$$WRITESECT			  Near16 HDD_CODE:0C21
+$$WRITESECT			  Near16 HDD_CODE:1103
+??DATE				  Text	 "06-26-08"
+??FILENAME			  Text	 "hdd	  "
+??TIME				  Text	 "11:17:22"
+??VERSION			  Number 0503
+@CPU				  Text	 5550H
+@CURSEG				  Text	 HDD_CODE
+@FILENAME			  Text	 HDD
+@WORDSIZE			  Text	 2
+ATAADRESSMODE			  Number 0006
+ATACOMMAND			  Number 0007
+ATACYLINDER			  Number 0003
+ATAFEATURES			  Number 0000
+ATAHEAD				  Number 0005
+ATASECTORCOUNT			  Number 0001
+ATASECTORNUMBER			  Number 0002
+FATBUFFER			  Number 4227
+FATSIZE				  Number 0219
+FATSONDISK			  Number 0217
+FATSTARTSECT			  Number 021F
+FCLUSTER			  Number [BP-0002]
+FCOUNT				  Number [BP-0008]
+FDIRPTR				  Number [BP-000C]
+FFATCHANGED			  Number [BP-000A]
+FHANDLER			  Number [BP-0006]
+FILECLOSE			  Far16	 HDD_CODE:0DDE
+FILECREATE			  Far16	 HDD_CODE:077B
+FILECREATEEMPTY			  Far16	 HDD_CODE:0B92
+FILECREATESIZE			  Far16	 HDD_CODE:0949
+FILEERASE			  Far16	 HDD_CODE:059C
+FILEERASEDIR			  Near16 HDD_CODE:04B9
+FILEERASENAME			  Far16	 HDD_CODE:05CB
+FILEOPEN			  Far16	 HDD_CODE:043F
+FILEPOS				  Far16	 HDD_CODE:0E95
+FILEREAD			  Far16	 HDD_CODE:0EF3
+FILERENAME			  Far16	 HDD_CODE:05E6
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 49
+Symbol Table
+HDD
+
+
+FILES				  Number 00024232
+FILESEARCH			  Near16 HDD_CODE:03B7
+FILESEEK			  Far16	 HDD_CODE:0E45
+FILESIZE			  Far16	 HDD_CODE:0E01
+FILETRUNC			  Far16	 HDD_CODE:067A
+FILEWRITE			  Far16	 HDD_CODE:104A
+FINDFREECLUSTER			  Near16 HDD_CODE:047C
+FSECTOR				  Number [BP-0004]
+GETCLUSTER			  Near16 HDD_CODE:0EC3
+GETFILEREC			  Near16 HDD_CODE:0416
+HDDBASEPORTADDR			  Number 01F0
+HDDERRORCODE			  Number 0008
+HDDNUMBER			  Number 0000
+HDD_SIZE			  Number 129D
+HIDDENSECTORS			  Number 021B
+INITHDD				  Far16	 HDD_CODE:0322
+MAXFILES			  Number 0008
+MOUNT				  Near16 HDD_CODE:021D
+PREPAREFILENAME			  Near16 HDD_CODE:0356
+PRIDOS_STARTSECTOR		  Number 020D
+READHDDSECTOR			  Near16 HDD_CODE:00A6
+READHDD_ID			  Near16 HDD_CODE:01BC
+ROOTDIRBUFFER			  Number 0227
+ROOTDIRITEMS			  Number 0200
+ROOTDIRSIZE			  Number 0020
+ROOTDIRSTARTSECT		  Number 0223
+RSECTS				  Number 0213
+SECTORADDRESS			  Number 0009
+SECTORDATABUFFER		  Number 000D
+SECTORSINCLUSTER		  Number 0211
+SEG_HDD_HEAP			  Word	 ----:---- Extern
+SENDCOMMANDTOHDD		  Near16 HDD_CODE:0000
+TMPDIRNAME			  Number 00024227
+VARFSTOP			  Number 00024272
+WRITEHDDSECTOR			  Near16 HDD_CODE:0107
+WRITEHDDSECTORBUF		  Near16 HDD_CODE:0168
+_FILECLOSE			  Near16 HDD_CODE:0DE2
+_FILECREATE			  Near16 HDD_CODE:077F
+_FILECREATEEMPTY		  Near16 HDD_CODE:0B96
+_FILECREATESIZE			  Near16 HDD_CODE:094D
+_FILEERASE			  Near16 HDD_CODE:05A0
+_FILEERASENAME			  Near16 HDD_CODE:05CF
+_FILEOPEN			  Near16 HDD_CODE:0443
+_FILEPOS			  Near16 HDD_CODE:0E99
+_FILEREAD			  Near16 HDD_CODE:0EF7
+_FILERENAME			  Near16 HDD_CODE:05EA
+_FILESEEK			  Near16 HDD_CODE:0E49
+_FILESIZE			  Near16 HDD_CODE:0E05
+_FILETRUNC			  Near16 HDD_CODE:067E
+_FILEWRITE			  Near16 HDD_CODE:104E
+Turbo Assembler	 Version 5.3	    06-26-08 11:17:22	    Page 50
+Symbol Table
+HDD
+
+
+
+Macro Name
+
+VAR_FS
+
+Structure Name			  Type	Offset
+
+TDIRITEM
+ DIR_NAME			  Byte	 0000
+ DIR_ATTR			  Byte	 000B
+ DIR_NTRES			  Byte	 000C
+ DIR_CRTTIMETENTH		  Byte	 000D
+ DIR_CRTTIME			  Word	 000E
+ DIR_CRTDATE			  Word	 0010
+ DIR_LSTACCDATE			  Word	 0012
+ DIR_FSTCLUSHI			  Word	 0014
+ DIR_WRTTIME			  Word	 0016
+ DIR_WRTDATE			  Word	 0018
+ DIR_FSTCLUSLO			  Word	 001A
+ DIR_FILESIZE			  Dword	 001C
+TFILEREC
+ DIRITEM			  Word	 0000
+ FILEREZERV			  Word	 0002
+ FILEPOSITION			  Dword	 0004
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+HDD_CODE			  16  129D Para	  Public  CODE
+

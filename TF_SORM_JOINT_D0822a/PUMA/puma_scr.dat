@@ -1,0 +1,180 @@
+; ╔════════════════════════════════════════════════════════════════════════════╗
+; ║  Файл:         Scr_Diff.DAT                                                ║
+; ║  Программист:  Тоневицкий Ю.Д.                                             ║
+; ╟────────────────────────────────────────────────────────────────────────────╢
+; ║  Используется: Scr_Diff.ASM                                                ║
+; ╟────────────────────────────────────────────────────────────────────────────╢
+; ║  Назначение:   Внутренние переменные модуля передачи изменений экрана по   ║
+; ║                ПУМе                                                        ║
+; ╟────────────────────────────────────────────────────────────────────────────╢
+; ║  Содержит:                                                                 ║
+; ║                                                                            ║
+; ║                                                                            ║
+; ║                                                                            ║
+; ╚════════════════════════════════════════════════════════════════════════════╝
+
+; --- макрос очистки буфера изменений
+;     вход:     нет
+;     выход:    обнуление рабочих переменных модуля
+@Clear_All_Diffs MACRO
+                mov     dDiffsCount,  0 ; количество записей в буфере изменений
+                mov     dCurrDiffNum, 0 ; текущий номер записи, передаваемой в ПУМу
+                ENDM
+
+; --- макрос делающий очередную запись в буфер изменений
+;     вход:     ebx - указатель на начало изменившейся части экрана
+;               edx - её длина
+;     выход:    нет
+;
+@Close_Curr_Diff MACRO
+                LOCAL   @@CCD_Exit, @@CCD_Write
+                ; --- проверка буфера на переполнение
+                mov     ebp, dDiffsCount
+                cmp     ebp, _DIF_BUF_SIZE
+                jae     @@CCD_Exit
+                ; --- проверка корректности записываемой в буфер информации
+                cmp     ebx, _SCRN_SIZE
+                jae     @@CCD_Exit
+                mov     eax, ebx
+                add     eax, edx
+                cmp     eax, _SCRN_SIZE
+                jb      @@CCD_Write
+                mov     edx, _SCRN_SIZE
+                sub     edx, ebx
+                ; --- собственно запись
+@@CCD_Write:    shl     ebp, _DIF_REC_SHIFT
+                mov     bufDiffs[ebp].diff_ptr, ebx
+                mov     bufDiffs[ebp].diff_len, edx
+                inc     dDiffsCount
+@@CCD_Exit:
+                ENDM
+
+; --- разрешение выдачи изменений экрана в выходной буфер программы -----------
+; вход:  нет
+; выход: bScrEnabled := 255 и весь экран в буфере изменений экрана
+;
+@Scr_Enabled    MACRO
+                LOCAL   @@SE_Loop
+
+                mov     bScrEnabled, 255
+                push    eax
+                push    ecx
+                push    edi
+                xor     eax, eax
+                mov     ecx, 50
+                mov     dDiffsCount, ecx
+                xor     edi, edi
+@@SE_Loop:      mov     bufDiffs[edi].diff_ptr, eax
+                mov     bufDiffs[edi].diff_len, 160
+                add     eax, 160
+                add     edi, 8
+                loop    @@SE_Loop
+                pop     edi
+                pop     ecx
+                pop     eax
+                ENDM
+
+; --- запрещение выдачи изменений экрана в выходной буфер программы -----------
+; вход:  нет
+; выход: bScrEnabled := 0 и очищенный буфер изменений экрана
+;
+@Scr_Disabled   MACRO
+                mov     bScrEnabled,  0
+                mov     dDiffsCount,  0
+                mov     dCurrDiffNum, 0
+                ENDM
+
+; --- макросы формирования обратного адреса ПУМы ------------------------------
+; вход:  eax    - адрес клиент -> канал
+; выход: eax    - адрес канал -> клиент
+;
+@EAX_Back_Addr  MACRO
+                rol     ah, 4                   ; переставим в адресе номера блоков
+                xchg    al, ah                  ; d4.d3.d2.d1 -> d4.d3.d1.d2 \
+                ror     eax, 8                  ; d4.d3.d1.d2 -> d2.d4.d3.d1  \  переставим
+                xchg    al, ah                  ; d2.d4.d3.d1 -> d2.d4.d1.d3   > в адресе
+                rol     eax, 8                  ; d2.d4.d1.d3 -> d4.d1.d3.d2  /  №№ ЦК
+                xchg    al, ah                  ; d4.d1.d3.d2 -> d4.d1.d2.d3 /
+                ENDM
+
+; вход:  edx    - адрес клиент -> канал
+; выход: edx    - адрес канал -> клиент
+;
+@EDX_Back_Addr  MACRO
+                rol     dh, 4                   ; переставим в адресе номера блоков
+                xchg    dl, dh                  ; d4.d3.d2.d1 -> d4.d3.d1.d2 \
+                ror     edx, 8                  ; d4.d3.d1.d2 -> d2.d4.d3.d1  \  переставим
+                xchg    dl, dh                  ; d2.d4.d3.d1 -> d2.d4.d1.d3   > в адресе
+                rol     edx, 8                  ; d2.d4.d1.d3 -> d4.d1.d3.d2  /  №№ ЦК
+                xchg    dl, dh                  ; d4.d1.d3.d2 -> d4.d1.d2.d3 /
+                ENDM
+
+; ---
+_SCRN_SIZE      =       8000    ; размер экрана: (аттр + символ) * 50 строк * 80 символов в строке
+Screen_Copy     DB      _SCRN_SIZE DUP(0)        ; копия экрана
+
+bPUMAInited     DB      0       ; флаг завершения инициализации ПУМы
+IF _MSP EQ TRUE
+dPUMAInit				DD      0       ; копия инициализирующего слова, передаваемого в PUMA_Init
+ENDIF
+
+; --- задержка на подпихивание СОМ портов
+dDiffsTime      DD      0
+IF _MSP EQ TRUE
+dDiffsTOut      DD      100
+ELSE
+dDiffsTOut      DD      50
+ENDIF
+
+; --- поддержка режима управления
+dCtrlAddr       DD      0       ; адрес на который отвечать при управлении
+bCtrlChnl       DB      255     ; № канала по которому управляется блок ( 0 .. _PUMA_CHNLS_CNT - 1)
+bScrEnabled     DB      0       ; 0 - нет выдачи экрана, 1 - есть выдача экрана
+wCtrlCK         DW      0       ; №№ ЦК и блока
+
+; --- поддержка режима конфигурации
+bCfg            DB      0       ; 1 - блок в режиме конфигурации, 0 - нет
+bRegime         DB      0       ; режим конфигурации: программа, конфигурация или доп. инф.
+; данные из запроса конфигурации
+bBlockType      DB      0       ; тип блока, должен быть _TYPE_BLOCK
+bDataType       DB      0       ; тип данных
+bCopyNumber     DB      0       ; номер копии данных
+bOperType       DB      0       ; тип операции
+wStartSector    DW      0       ; номер начального сектора
+wSectorCount    DW      0       ; общее количество секторов
+; рабочие переменные конфигурации
+wNextSector     DW      0       ;
+bFileOpen       DB      0       ;
+dFileID         DD      0FFFFFFFFh  ; храним ID файла для проверки перед входом в режим конфигурации
+dCfgTime        DD      0       ;
+_CFG_TOUT       =       5000    ;
+_ID_File        DD      0FFFFFFFFh  ;
+
+
+
+; --- работа с экраном
+dDiffsCount     DD      0       ; количество записей в буфере изменений
+dCurrDiffNum    DD      0       ; текущий номер записи, передаваемой в ПУМу
+
+_DIF_BUF_SIZE   =       128     ; max число записей в буфере
+_DIF_REC_SIZE   =       8       ; размер одной записи об изменениии в байтах
+_DIF_REC_SHIFT  =       3       ; тоже в сдвигах
+
+strucDiff       STRUC
+diff_ptr        DD      0       ; указатель на начало изменившейся части экрана
+diff_len        DD      0       ; её длина в байтах
+strucDiff       ENDS
+
+; --- буфер изменений экран
+bufDiffs        strucDiff  _DIF_BUF_SIZE DUP(<>) ; сам буфер изменений
+
+; --- буфер для формирования и приёма пакетов ПУМы
+messDiff        DB      270 DUP(0)               ; буфер для формирования ПУМовского сообщения об изменении экрана
+
+; --- тарификация
+bTarChnl        DB      255                      ;
+pre_buff_Tar    DB      0, 0, 0, 0, 81h          ;
+buff_Tar        DB      270 DUP(0)               ;
+; ---
+buff_In         DB      270 DUP(0)               ;
+

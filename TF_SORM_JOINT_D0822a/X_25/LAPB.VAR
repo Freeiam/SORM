@@ -1,0 +1,292 @@
+USER            DW      _USER, _USER    ;
+
+KL              EQU     2
+OSHID           EQU     0       ;1-Öëãà ÅÖëèêÖêõÇçÄü ëÇüáú
+;USER            DW      0,1     ;1-ëÖíú     !!!!!!  íÄä çÄÑé
+;ADR_DOP     DB  0
+;USER            DW      1,0     ;1-ëÖíú
+LEV2            EQU     0       ;0 - X-25\1-LAPD
+MODUL           EQU     0       ;1-128\0-8
+SABME           EQU     00101111B       ;01101111B-128
+SAPI_L2         DW      KL      DUP(0)
+COM_X_25        EQU     00000001B
+OTV_X_25        EQU     00000011B
+;COM_X_25        EQU     10000000B
+;OTV_X_25        EQU     11000000B
+MOD_FSN         EQU     7       ;7F-128 /
+
+K               EQU     7       ;3-Ñãü 16 äÅ†©‚
+OKNO_L2         DW      KL      DUP(2)
+SHL_K           EQU     2
+SHL_BUF         EQU     7       ;
+M_4             EQU     3
+DLIN_POC        DW      256
+
+SOST_SDL        DW      KL      DUP(0)
+F               DW      KL      DUP(0)
+P               DW      KL      DUP(0)
+RC              DW      KL      DUP(0)
+FSNT            DW      KL      DUP(0)
+FSNF            DW      KL      DUP(0)
+FSNX            DW      KL      DUP(0)
+FSNL            DW      KL      DUP(0)
+BSNT            DW      KL      DUP(0)
+SLED_POK        DW      KL      DUP(0)
+POS_POK         DW      KL      DUP(0)
+TEI             DW      KL      DUP(01h)
+RAB_TEI         DW      KL      DUP(0)
+BUF_LSSU        DB      KL DUP( 4 DUP(0))
+BUF_COML2       DB      KL DUP( 4 DUP(0))
+BUF_POK         DB      KL      DUP(8 DUP(0))
+ADR_LSSU        DW      10 DUP(0)
+SLED_LSSU       DW      KL DUP(0)
+POS_LSSU        DW      KL DUP(0)
+SLED_COM        DW      KL DUP(0)
+POS_COM         DW      KL DUP(0)
+ADR_DL          DW      10 DUP(0)
+
+FG_LAPB         DW      KL DUP(0)
+                        ;0-LAYER 3 INITIATID
+                        ;1-ABLE TO ESTABLISH ÉéíéÇçéëíú ìëíÄçÄÇãàÇÄíúëü
+                        ;2-RECEIVER BUSY
+                        ;3-PEER RECEIVER BUSY
+                        ;4-ACKNOWLEDGE
+                        ;5-REJECT EXCEPTION
+                        ;6-èéäÖí ëíÖêí
+                        ;7-áÇÖçé êÄÅéíÄÖí
+                        ;8-PLACE IN UI QUEUE
+                        ;9-REMOVE UI FRAME FROM QUEUE
+                        ;10-TIME200
+                        ;11-TIME203
+                        ;14-128   /0-8 åéÑìãú
+                        ;15-LAPB /0 -"X-25"
+FG_LAPB2        DW      KL DUP(0)   ;0-ìÑÄãÖççÄü ëíéêéçÄ áÄçüíÄ
+FG_TIMI         DW      KL DUP(0)
+
+OLD_TIMET200    DW      KL DUP(0)
+OLD_TIMET203    DW      KL DUP(0)
+POROG_T200      DW      1000
+POROG_T203      DW      11000
+M_OR_COM        DW      KL DUP(0)
+OKTET1          DB      0
+
+TAB_S           DB      17,18,19,23
+TAB_U           DB      00,23,23,10,23,23,23,23,23,23
+                DB      23,07,23,23,23,23,08,23,23,23
+                DB      23,23,23,23,09,23,23,07,23,23
+                DB      23,23,23,20,23,23,23,23,23,23
+                DB      23,23,23,23,23,23,23,23,23,23
+                DB      23,23,23,23,23,23,23,23,23,23
+                DB      23,23,23,23,23,23,23,23,23,23
+
+TAB_U_C_O       DB      02,02,02,01,02,02,02,02,02,02
+                DB      02,02,02,02,02,02,00,02,02,02
+                DB      02,02,02,02,01,02,02,00,02,02
+                DB      02,02,02,02,01,02,02,02,02,02
+
+DM              EQU     00001111B
+UI              EQU     00000011B
+DISC            EQU     01000011B
+UA              EQU     01100011B
+FRMR            EQU     10000111B
+XID             EQU     10101111B
+
+RR              EQU     00000000B
+RNR             EQU     00000100B
+REJ             EQU     00001000B
+
+SAPI_LEV2       EQU     11111100B
+M_U_F           EQU     00010000B
+M_S_F           EQU     00000001B
+M_S_F8          EQU     00010000B
+M_C_R           EQU     00000010B
+M_C_RX25        EQU     00000010B
+;M_C_RX25        EQU     01000000B
+M_COM_S         EQU     00001100B
+M_COM_U         EQU     11101100B
+N200            EQU     3
+
+M_OR_0          EQU     0000000000000001B
+M_OR_1          EQU     0000000000000010B
+M_OR_2          EQU     0000000000000100B
+M_OR_3          EQU     0000000000001000B
+M_OR_4          EQU     0000000000010000B
+M_OR_5          EQU     0000000000100000B
+M_OR_6          EQU     0000000001000000B
+M_OR_7          EQU     0000000010000000B
+M_OR_8          EQU     0000000100000000B
+M_OR_9          EQU     0000001000000000B
+M_OR_10         EQU     0000010000000000B
+M_OR_11         EQU     0000100000000000B
+M_OR_12         EQU     0001000000000000B
+M_OR_13         EQU     0010000000000000B
+M_OR_14         EQU     0100000000000000B
+M_OR_15         EQU     1000000000000000B
+M_AND_0         EQU     1111111111111110B
+M_AND_1         EQU     1111111111111101B
+M_AND_2         EQU     1111111111111011B
+M_AND_3         EQU     1111111111110111B
+M_AND_4         EQU     1111111111101111B
+M_AND_5         EQU     1111111111011111B
+M_AND_6         EQU     1111111110111111B
+M_AND_7         EQU     1111111101111111B
+M_AND_8         EQU     1111111011111111B
+M_AND_9         EQU     1111110111111111B
+M_AND_10        EQU     1111101111111111B
+M_AND_11        EQU     1111011111111111B
+M_AND_12        EQU     1110111111111111B
+M_AND_13        EQU     1101111111111111B
+M_AND_14        EQU     1011111111111111B
+M_AND_15        EQU     0111111111111111B
+
+
+ADR_SDL         DW  OFFSET TEI_UNASSIGNED         ; 0
+                DW  OFFSET ASSIGN_AWAITING        ; 1
+                DW  OFFSET ESTABLISH_AWAITING     ; 2
+                DW  OFFSET TEI_ASSIGNED           ; 3
+                DW  OFFSET AWAITING_ASTABLISHMENT ; 4
+                DW  OFFSET AWATING_RELEASE        ; 5
+                DW  OFFSET MULTIPLE_FRAME         ; 6
+                DW  OFFSET TIMER_RECOVERY         ; 7
+                        ;       0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+                TAB_TEI DB      2 ,4 ,6 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+
+ADR_TEI         DW  OFFSET RET_SDL      ;00
+                DW  OFFSET SDL_0_GO     ;02
+                DW  OFFSET SDL_1_GO     ;04
+                DW  OFFSET SDL_2_GO     ;06
+
+                        ;       0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+                TAB_ASS DB      2 ,4 ,6 ,8 ,10,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+ADR_ASS         DW  OFFSET RET_SDL      ;00
+                DW  OFFSET SDL_0_ASS    ;02
+                DW  OFFSET SDL_1_ASS    ;04
+                DW  OFFSET SDL_2_GO     ;06
+                DW  OFFSET SDL_3_GO     ;08
+                DW  OFFSET SDL_4_GO     ;10
+
+                ;               0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+        TAB_SDL_EST     DB      0 ,2 ,4 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+ADR_SDL_EST     DW  OFFSET RET_SDL      ;00
+                DW  OFFSET SDL_1_ASS    ;02
+                DW  OFFSET SDL_2_EST    ;04
+                DW  OFFSET SDL_3_EST    ;06
+                DW  OFFSET SDL_4_EST    ;08
+
+                ;               0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+        TAB_SDL_TEI     DB      2 ,0 ,0 ,0 ,8 ,4 ,6 ,10,12,14
+                        DB      16,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+
+ADR_SDL_TEI     DW  OFFSET RET_SDL      ;00
+                DW  OFFSET SDL_0_TEI2   ;02
+                DW  OFFSET SDL_5_GO     ;04
+                DW  OFFSET SDL_6_GO     ;06
+                DW  OFFSET SDL_4_TEI2   ;08
+                DW  OFFSET SDL_7_GO     ;10
+                DW  OFFSET SDL_8_GO     ;12
+                DW  OFFSET SDL_9_GO     ;14
+                DW  OFFSET SDL_10_GO    ;16
+
+                        ;               0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+                TAB_SDL_AWA     DB      2 ,0 ,0 ,0 ,04,0 ,04,06,08,10
+                                DB      12,14,16,0 ,0 ,18,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+
+ADR_SDL_AWA     DW  RET_SDL             ;00
+                DW  SDL_0_AWA           ;02
+                DW  SDL_6_AWA           ;04
+                DW  SDL_7_AWA           ;06
+                DW  SDL_8_AWA           ;08
+                DW  SDL_9_AWA           ;10
+                DW  SDL_10_AWA          ;12
+                DW  SDL_11_AWA          ;14
+                DW  SDL_12_AWA          ;16
+                DW  SDL_15_AWA          ;18
+
+                        ;               0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+                TAB_SDL_AW2     DB      00,0 ,0 ,0 ,02,0 ,02,04,06,08
+                                DB      10,00,00,0 ,0 ,12,0 ,0 ,0 ,0
+                        DB      0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0
+ADR_SDL_AW2     DW  RET_SDL             ;00
+                DW  SDL_6_AW2           ;02
+                DW  SDL_7_AWA           ;04
+                DW  SDL_8_AWA           ;06
+                DW  SDL_9_AW2           ;08
+                DW  SDL_10_AW2          ;10
+                DW  SDL_15_AW2          ;12
+
+                        ;               0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+                TAB_SDL_MUL     DB      02,0 ,0 ,0 ,16,4 ,14,18,20,22
+                                DB      24,00,06,26,28,10,12,30,32,34
+                                DB      36,38,40,00,00,00,00,00,00,0
+ADR_SDL_MUL     DW  RET_SDL             ;00
+                DW  SDL_0_MUL           ;02
+                DW  SDL_5_MUL           ;04
+                DW  SDL_12_MUL          ;06
+                DW  SDL_11_MUL          ;08
+                DW  SDL_15_MUL          ;10
+                DW  SDL_16_MUL          ;12
+                DW  SDL_6_MUL           ;14
+                DW  SDL_4_MUL           ;16
+                DW  SDL_7_MUL           ;18
+                DW  SDL_8_MUL           ;20
+                DW  SDL_9_MUL           ;22
+                DW  SDL_10_MUL          ;24
+                DW  SDL_13_MUL          ;26
+                DW  SDL_14_MUL          ;28
+                DW  SDL_17_MUL          ;30
+                DW  SDL_18_MUL          ;32
+                DW  SDL_19_MUL          ;34
+                DW  SDL_20_MUL          ;36
+                DW  SDL_21_MUL          ;38
+                DW  SDL_22_MUL          ;40
+
+                        ;               0 ,1 ,2 ,3 ,4 ,5 ,6 ,7, 8 ,9
+                TAB_SDL_TIM     DB      02,0 ,0 ,0 ,14,04,12,16,18,20
+                                DB      22,08,06,24,26,10,00,28,30,32
+                                DB      34,36,38,00,00,00,00,00,00,00
+ADR_SDL_TIM     DW  RET_SDL             ;00
+                DW  SDL_0_TIM           ;02
+                DW  SDL_5_TIM           ;04
+                DW  SDL_12_TIM          ;06
+                DW  SDL_11_TIM          ;08
+                DW  SDL_15_TIM          ;10
+                DW  SDL_6_TIM           ;12
+                DW  SDL_4_TIM           ;14
+                DW  SDL_7_TIM           ;16
+                DW  SDL_8_TIM           ;18
+                DW  SDL_9_TIM           ;20
+                DW  SDL_10_TIM          ;22
+                DW  SDL_13_TIM          ;24
+                DW  SDL_14_MUL          ;26
+                DW  SDL_17_MUL          ;28
+                DW  SDL_18_MUL          ;30
+                DW  SDL_19_MUL          ;32
+                DW  SDL_20_MUL          ;34
+                DW  SDL_21_MUL          ;36
+                DW  SDL_22_MUL          ;38
+
+TAB_UI          DB  0,2,0,0,0,0,0,0,0,4,0
+ADR_UI          DW    OFFSET UI_REQ
+                DW    OFFSET UI_FRAME
+                DW    OFFSET UI_COMMAND
+                DW    OFFSET UI_COMMAND
+                DW    OFFSET UI_COMMAND
+                DW    OFFSET UI_COMMAND
+SCH_FSNL        DW      KL  DUP(0)
+BUF_LEV1        DB       8 DUP(256 DUP(0EH))
+BUF_LEV1_OLD    DB       8 DUP(256 DUP(0EH))
+BUF_LEV2        DB      KL DUP( 8 DUP(256 DUP(0FH)))
+;BUF_LEV1_OLD    DB      KL DUP( 8 DUP(256 DUP(0EH)))
+
+; ----
+LAPB_Err        DW      KL      DUP(0)
+LAPB_Err_2      DW      KL      DUP(0)
+LAPB_Err_3      DW      KL      DUP(0)

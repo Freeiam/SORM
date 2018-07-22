@@ -1,0 +1,663 @@
+
+SMEV1           EQU     6080 - 160;5920
+SMESH_APUS1     EQU     SMEV1+1564      ; нагрузка
+SMESH_APUS2     EQU     SMEV1+1724      ; связь с СИДС
+SMESH_CC1       DW      SMEV1+364+72,SMEV1+364+80,SMEV1+320+88,SMEV1+320+96
+SMESH_LL1       DW      SMEV1+320+72,SMEV1+320+80,SMEV1+320+88,SMEV1+320+96
+SMESH_DLIT      EQU     SMEV1+22-320
+
+SMESH_T_F       EQU     SMEV1+1462
+SMESH_FAZ       EQU     SMEV1+1620      ; фаза ФАПЧ
+
+FG_KLA_WIN      DW      0       ;0-ВКЛ.РЕЖИМА ВЕРХНЕГО ОКНА
+                                ;1-ВКЛ.РЕЖИМА НИЖНЕГО ОКНА
+                                ;7-ИНКРЕМЕНТ ВЫВОДА НА 200H + LINIY
+FG_TIME         DW      0       ;0-ЕСТЬ ИЗМЕНЕНИЕ ДНЯ
+SCH_VV          DW      0
+SCH_IZMEN       DW      0
+NOM_IZMEN       DW      0
+SMESH_DOST      EQU   SMEV1+520
+
+NORMA_WR        DB    'РАБОТА',0       ;\
+AVARIY_WR       DB    'АВАРИЯ',0       ;| источники питания
+SPACE_VV        DB    ' ', 0           ;/
+IF _MSP EQ TRUE
+_pos_ip1        equ     _posBasicDownWin + 13*_y + 22*_x ; 1 источник питания
+_pos_ip2        equ     _posBasicDownWin + 12*_y + 22*_x ; 2 источник питания
+ENDIF
+                ;ПРОЧАЯ ИНФОРМАЦИЯ
+GOD             DB      20h
+GOD_            DB      00H
+MES             DB      00h
+DEN_MES         DB      00h     ;ДЕНЬ МЕСЯЦА
+SECUNDA         DB      0       ;SEK
+MIN             DB      0       ;MIN
+CHAS            DB      0       ;CHAS
+
+                ;         1    2   3   4   5   6   7   8   9               10H 11H 12H
+DLIT_MES        DB      0,31H,0FFH,31H,30H,31H,30H,31H,31H,30H,0,0,0,0,0,0,31H,30H,31H
+OLD_TIME        DW      0
+NEW_TIME        DW      0
+POROG_SEC       EQU     1000
+TEK_SECUND      DD      0
+
+DOP_VEL         DW      0
+NOM_VERX_OKNA   DW      0
+PEREM_VIV1      DW      0
+PEREM_VIV2      DW      0
+PEREM_VIVD      DD      0
+
+SOST_VIU5       DW      0
+SCH_V_L2        DW      0
+SEG_ZAP         DW      0
+VIU_PLAN        DW      0
+ADR_POLN        DW      40 DUP(0)
+
+SCH_NAG         DW      0
+OLD_T_NAG       DW      0
+NAGRUS          DW      0
+
+FG_W_V          DW      10B     ;0-ВЫВОД ПО L3_SDL/0-ПО 'МО'
+                                ;1-ВЫВОД ПАНЕЛИ
+
+BUF_ST_TF	DB	0FFH,0FFH,4,20H DUP(0FFH)
+
+POROG_WV        DW      200
+OLD_TWV         DW      0
+SOST_W_V        DW      0
+ADR_WIN_VIU     DW      10 DUP(0)
+                        ;12345678
+VIV_MO          DB      'РАБОТА', 0, 0
+                DB      'ФАЗА 1', 0, 0
+                DB      'ФАЗА 2', 0, 0
+                DB      'ФАЗА 3', 0, 0
+                DB      'ФАЗА 4', 0, 0
+                DB      'ФАЗА 5', 0, 0
+                DB      'ФАЗА 6', 0, 0
+                DB      'ФАЗА 6', 0, 0
+WIN_MO          DB      02FH,0CFH,0CFH,0CFH,0CFH,0CFH,0CFH,0CFH
+_pos_MO         EQU     37 * _y + 8 * _x
+
+AVA_VIV         DB      0CFH
+VID_VID         DB      07FH
+CURR_VIV        DB      0E0h    ; желтый фон черные буквы
+SRED_PTR        DW      0
+NORMA           DB      2FH
+
+; переменные для редактирования переменной битовых флагов
+_CHNG_CUR_BIT   DW       0                ; текущее положение
+_CHNG_TMP_VAL   DW       0                ; временное значение
+
+DUB_OK          DB      'OK', 0
+DUB_NO          DB      'NO', 0
+
+DUB_Y           DB      'Y', 0
+DUB_N           DB      'N', 0
+
+Space           db      ' ',0
+
+_y      equ     160      ; пропуск по Y
+_x      equ     2        ; пропуск по X
+
+; --- работа с главным меню
+_pos_MENU       EQU     0
+_pos_DnWin      EQU     34 * _y
+_pos_PO_OBS     EQU     37 * _y
+_color_normal_f EQU     cBLUE * 10h + clWHITE
+_color_normal_MO        EQU    cGREEN * 10h + clWHITE
+_color_norm_help        EQU    cGREEN * 10h + clYELLOW
+_color_normal_BL        EQU    cBROWN * 10h + clWHITE
+_color_BL_DBG_slct      EQU clYELLOW * 10h + clRED;;;clWHITE
+_color_BL_DBG_prev      EQU clGREEN * 10h + clWHITE
+_color_BL_DBG_bad       EQU cBLACK * 10h + clWHITE
+
+; --- REBOOT --- перезагрузка
+_pos_reboot_win         equ     34*_y+28*_x     ; окно перезагрузки
+_color_reboot_win       equ     clRED*10h + clYellow; цвет для окна перезагрузки
+
+_color_work     equ     cGreen   * 10h + clWhite
+_color_avar     equ     clRed    * 10h + clWhite
+_color_curr     equ     clYellow * 10h + cBlue
+_color_puma     equ     cCYAN    * 10h + cWhite
+_color_puma_n   equ     cCYAN    * 10h + clGREEN
+_color_puma_v   equ     cCYAN    * 10h + clWhite
+_color_unknow   equ     cCYAN    * 10h + clYellow
+
+_pos_cto_indic  equ     34*_y+10*_x     ; индикация ЦТО-RS232
+
+; --- основное нижнее окно
+_pos_MO_Num     EQU     _pos_DnWin + 4 * _y + 11 * _x  ; номер пакета МО
+_pos_MO_Load    EQU     _pos_DnWin + 5 * _y + 11 * _x  ; нагрузка МО
+_pos_MO_TO      EQU     _pos_DnWin + 6 * _y + 11 * _x  ; тайм-ауты МО
+_pos_MO_NVP     EQU     _pos_DnWin + 7 * _y + 11 * _x  ; нет входного потока МО
+_pos_MO_GOT     EQU     _pos_DnWin + 8 * _y + 11 * _x  ; пропадания готовности МО
+_pos_MO_PAK     EQU     _pos_DnWin + 9 * _y + 11 * _x  ; ошибки пакетов МО
+
+
+_pos_loopback   EQU     _pos_DnWin + 11 * _y + 35 * _x ; где показывается заворот
+_pos_nag        EQU     _pos_DnWin + 1 * _y + 11 * _x  ; где показывается нагрузка
+_pos_year       EQU     _pos_DnWin + 1 * _y + 38 * _x  ; где показывается год/месяц/день
+_pos_time       EQU     _pos_DnWin + 1 * _y + 54 * _x  ; где показывается часы/минуты/секунды
+
+
+; --- основное нижнее окно
+; положение о размере памяти
+_posBasicDownWin equ    34*_y
+_posLowerDownWin equ    _posBasicDownWin + 3 * _y
+
+;_pos_loopback   equ     _posBasicDownWin + 33 * 2 + 14 * 160;
+;_pos_nag        equ     _posBasicDownWin + 1*_y + 11*_x ; где показывается нагрузка
+;_pos_god        equ     _posBasicDownWin + 1*_y + 38*_x ; где показывается год/месяц/день
+;_pos_vrem       equ     _posBasicDownWin + 1*_y + 54*_x ; где показывается часы/минуты/секунды
+IF _MSP NE TRUE
+_pos_ip1_old    EQU     SMESH_IP_1                     ; индикация работы
+_pos_ip2_old    EQU     SMESH_IP_2                     ; источников питания (не моноблок)
+
+_pos_ip1        EQU     _pos_DnWin + 13 * _y + 21 * _x ; 1 источник питания
+_pos_ip2        EQU     _pos_DnWin + 12 * _y + 21 * _x ; 2 источник питания
+pit_up          DB      'U',0
+pit_kzvs        DB      'K',0
+_pos_ip1_up     EQU     _pos_DnWin + 12 * _y + 28 * _x ; 2 источник питания
+_pos_ip1_kzvs   EQU     _pos_DnWin + 12 * _y + 29 * _x ; 2 источник питания
+_pos_ip2_up     EQU     _pos_DnWin + 13 * _y + 28 * _x ; 2 источник питания
+_pos_ip2_kzvs   EQU     _pos_DnWin + 13 * _y + 29 * _x ; 2 источник питания
+ENDIF
+
+_pos_Memory_size    equ     _posBasicDownWin + 1 * _y + 24 * _x ; размер памяти
+_pos_Flash_size     equ     _pos_Memory_size + _y               ; размер флеша
+
+_pos_BL_number_Out  equ     _posBasicDownWin + 7 * _y + 23 * _x ; черный список
+_pos_BL_count_Out   equ     _posBasicDownWin + 7 * _y + 16 * _x ; срабатываний
+_pos_BL_number_In   equ     _posBasicDownWin + 9 * _y + 23 * _x ; черный список
+_pos_BL_count_In    equ     _posBasicDownWin + 9 * _y + 16 * _x ; срабатываний
+
+_SM_WIN_COLOR   equ     cBLUE*10h + clCYAN              ; цвета моего окна
+
+                ; тип блока
+_pos_TypeBlock  equ     _posBasicDownWin + 11*_y + 70*_x ; тип блока моноблок или стандарт
+_color_type     equ     cCYAN*10h + clWHITE             ; цвет типа блока
+TYPE_OLD        DB      ' ИКМ-30 ', 8 DUP(0)
+TYPE_STANDART   DB      'СТАНДАРТ', 8 DUP(0)
+TYPE_UNDEF      DB      '--------', 8 DUP(0)
+TYPE_MONO       DB      'МОНОБЛОК', 8 DUP(0)
+TYPE_BUN        DB      ' МСП-М  ', 8 DUP(0)
+
+lbl_LAPB        DB      'LAPB ', 0
+lbl_X25         DB      'X.25 ', 0
+lbl_DCD         DB      'DCD  ', 0
+lbl_DSR         DB      'DSR  ', 0
+_SPACE_CHAR     DB      ' ',     0
+
+                ; версия железа
+_pos_HardVers_hi equ    _posBasicDownWin + 12*_y + 72*_x ; тип блока моноблок или стандарт
+_pos_HardVers_lo equ    _posBasicDownWin + 12*_y + 75*_x ; тип блока моноблок или стандарт
+
+                ; параметры компиляции
+_pos_NoModem    equ     _posBasicDownWin + 08*_y + 66*_x ; тип блока моноблок или стандарт
+_pos_IsModem    equ     _posBasicDownWin + 09*_y + 66*_x ; тип блока моноблок или стандарт
+_pos_DCE        equ     _posBasicDownWin + 03*_y + 51*_x ; тип блока моноблок или стандарт
+TYPE_DCE        DB      ' DCE ', 0, 0, 0
+TYPE_DTE        DB      ' DTE ', 0, 0, 0
+
+                ; тестирование черного списка
+_pos_Win_BL     equ     35*_y                       ; позиция окна тестирования
+_pos_BL_inNum   equ     _pos_Win_BL + 3*_y + 30*_x  ; ввод номера
+_pos_BL_status  equ     _pos_Win_BL + 7*_y + 10*_x  ; показатель что делаем см.ниже
+
+_pos_BL_White   equ     _pos_Win_BL + 9*_y +  8*_x  ; белый список
+
+_pos_BL_telef   equ     _pos_Win_BL + 2*_y + 50*_x  ; найденный телефон
+_pos_BL_rules   equ     _pos_Win_BL + 2*_y + 74*_x  ; найденное правило
+_pos_BL_num_rules equ   _pos_Win_BL + 4*_y + 40*_x  ; телефоны правила
+_color_red      equ     cRED*10h + clWHITE ; цвет при выдаче лога
+
+BL_numPos       db      0                       ;
+BL_number       dd      0                       ;
+
+BL_status_inNum db      'Ввод номера телефона ',0 ;
+BL_status_Find  db      'Поиск в черном списке',0 ;
+BL_result_OK    db      'Номер найден ->      ',0 ;
+BL_result_NO    db      'Номер НЕнайден       ',0 ;
+
+; настройка сети тарификация и длины номера
+_color_WinTarNet     equ clBlue*10h + clGreen       ; цвет окна
+_color_TarNet_Ck     equ clBlue*10h + clYellow      ; цвет ЦК и длины номера
+_color_TarNet_Mod    equ clBlue*10h + clWhite       ; цвет изменений модемов
+_color_TarNet_CurMod equ clBlue*10h + clRed         ; цвет позиции курсора
+_pos_Win_TarNet equ  37*_y                          ; позиция окна
+_pos_TarNet_CK  equ  _pos_Win_TarNet + 4*_y + 3*_x  ; позиция текущего ЦК
+_pos_TarNet_Mod equ  _pos_Win_TarNet + 4*_y + 17*_x ; позиция модемов
+_pos_NumLen     equ  _pos_Win_TarNet + 1*_y + 27*_x ; позиция номера в станции
+
+; информация о работе
+LOG_CHANGE      DB      0               ; был ли сменен лог 1 - был
+_log_timeout    equ     40 * 500        ; таймаут вывода лога перед затиранием
+LOG_TIMEOUT     DW      0               ; текущее значение лога
+_pos_log        equ     49*_y           ; позиция для вывода что делаем
+_color_cl_log   equ     clBLUE*10h + clWHITE; цвет для стирания лога
+
+_color_log      equ     clBLUE*10h + clCYAN ; цвет при выдаче лога
+
+LOG_SAVE_FLASH  DB      'LOG: Конфигурация сохранена на флеш',0
+
+;;;HDD!!!
+_color_err_log  equ     clRed*10h + clYellow
+color_log       DB      _color_log
+
+LOG             DB      'LOG:', 0
+LOG_NO_CFG      DB      'LOG: Конфигурация не загружена !!!',0
+LOG_ERR_CFG     DB      ' Ошибка сохранения конфигурации!', 0
+LOG_ERR_BLST    DB      ' Ошибка сохранения "черного" списка!', 0
+LOG_SAVED_CFG   DB      ' Конфигурация - сохранена   |  ', 0
+LOG_SAVED_BLST  DB      ' "Черный" список - сохранен', 0
+LOG_LOADED_CFG	DB      'LOG: Конфигурация успешно загружена', 0
+
+log_login       db      'LOG: - ДОСТУП ОТКРЫТ -',0
+log_logout      db      'LOG: - ДОСТУП ЗАКРЫТ -',0
+log_clear_count db      'LOG: обнуление счетчиков статистики',0
+LOG_CLEAR       DB      80 dup (' '), 0
+
+
+
+
+; - - - - - - - - - - - - - - -  Ф А П Ч - - - - - - - - - - - - - - - - - - -
+;
+_pos_pll_src    DW      45 * 160 +  7 * 2
+_pos_pll_err    DW      45 * 160 + 11 * 2
+_pos_pll_pha    DW      46 * 160 + 10 * 2
+_pos_pll_dac    DW      47 * 160 + 10 * 2
+_color_pll_err  DB      clWHITE + clRED * 16
+_color_pll      DB      clWHITE + cBLUE * 16
+_str_pll_src    DB      'МОД', 0
+                DB      '???', 0
+_str_pll_err    DB      ' OK', 0
+                DB      'ЧЗД', 0
+                DB      'НВП', 0
+
+
+
+; === ВЕРХНИЕ ОКНА  =================================
+; --- окно контроля процесса сбора конфигурации
+;
+_pos_Win_Cfg    =       0                       ;
+_color_Win_Cfg  =       cBLUE * 16 + clWhite    ;
+_color_Win_Cfg_G=       cBLUE * 16 + cWhite     ;
+
+str_CfgDate     DB      'ДК', 0
+str_TarNet      DB      'ТС', 0
+str_CfgCK       DB      'ОК', 0
+str_CfgClear_2  DB      '  ', 0
+str_CfgClear_5  DB      '     ', 0
+str_CfgClear_16 DB      '                ', 0
+
+_pos_CfgTitle   =       4 * _x
+str_CfgTitle    DB      ' Контроль сбора конфигурации ', 0
+
+_pos_CfgStatus  =       49 * _x                 ;
+str_CfgRun      DB      ' процесс идёт ... ', 0 ;
+str_CfgDone     DB      ' процесс завершён ', 0 ;
+
+ch_BlkNames     DB      'АБИТЦицОПУ'            ;
+ch_BadBlk       DB      '?'                     ;
+ch_NoBlk        DB      '-'                     ;
+
+_color_Win_Cfg_Curr  =  cBLUE * 16 + clYellow    ;
+pos_Curr_CK		  DB			0
+pos_Prev_CK		  DB			0
+pos_Max					DB      0
+
+ch_Curr_CK			DB      '>'
+ch_Prev_CK      DB      '║'
+ch_Clear        DB      ' '
+ch_Query        DB      '?'
+
+_str_no_One_CK	DB      'Операция не возможна пока идёт сбор общей конфигурации АТС', 0
+
+                ; тип конфигурации в АТС: новая (мультипрефикс) или старая (монопрефикс)
+_pos_TypePrefix equ     _posBasicDownWin + 3 * _y + 65 * _x ;
+_len_TypePrefix equ     14
+_str_monoPref   DB      ' один префикс ', 0
+_str_multyPref  DB      ' мультипрефикс', 0
+
+                ; тип СОРМа
+_pos_TypeSORM   equ    _pos_TypePrefix + 3 * _y
+_len_TypeSORM   equ     14
+
+; --- окно конфигурации ЦК
+;
+_pos_Cfg_CK_Win    =    5 * _y + 20 * _x        ;
+_pos_Cfg_CK_Num    =    _pos_Cfg_CK_Win + _y + 20 * _x ;
+_pos_Cfg_CK_State  =    _pos_Cfg_CK_Num + 4 * _x;
+_pos_Cfg_CK_Win    =    5 * _y + 20 * _x        ;
+_pos_Cfg_CK_Curr   =    _pos_Cfg_CK_Win + 7 * _y;
+_pos_Cfg_CK_Blk    =    _pos_Cfg_CK_Win + 7 * _y + 7 * _x;
+
+_width_Cfg_CK_Win  =    41			;
+_height_Cfg_CK_Win =    27			;
+_color_Cfg_CK_Win  =    clBLUE * 16 + clWhite   ;
+_color_Cfg_CK_Curr =    clBLUE * 16 + clYellow  ;
+
+str_Done		    DB      '   собрана   ', 0
+str_Started     DB      ' не собрана  ', 0
+str_not_Started DB      'не собиралась', 0
+
+Cfg_CK_Num      DB      0
+Cfg_Blk_Type	DB	255
+pos_Curr_Blk	DB	0
+pos_Prev_Blk	DB	0
+
+; --- просмотр конфигурации линий блока ЦК
+;
+_pos_Cfg_Ln_Win =       0                       ;
+_pos_Cfg_Ln_Curr=       _pos_Cfg_Ln_Win + _y    ;
+_pos_Cfg_Ln_CK  =       _pos_Win_Cfg + 41 * _x  ;
+_pos_Cfg_Ln_Blk =       _pos_Cfg_Ln_CK + 11 * _x;
+
+pos_Curr_Ln     DW      0
+pos_Prev_Ln     DW      0
+pos_Base_Ptr    DD      0
+pos_Ln_Count    DW      0
+
+lnBadType       DB      '???', 0
+lnTypeNames     DB      'НЕП', 0, 'ВН ', 0, 'АБ ', 0, 'АБУ', 0
+                DB      'бнТ', 0, 'нТ ', 0, 'СС ', 0, 'ПР ', 0
+                DB      'ИC ', 0, 'ВХ ', 0, 'ДВУ', 0, 'ИСМ', 0
+                DB      'ЗСЛ', 0, 'СЛМ', 0, 'ППК', 0, 'ЦТО', 0
+                DB      'АБд', 0, 'пАБ', 0, 'МТб', 0, 'МТн', 0
+                DB      'СК0', 0, 'СК1', 0, 'СК2', 0, 'СК3', 0
+                DB      'РК ', 0, 'АВТ', 0, 'ГО1', 0, 'ГО2', 0
+                DB      '2BD', 0, 'СПй', 0, 'ТК ', 0, 'удД', 0
+
+; --- просмотр тарификационной сети
+;
+_pos_Tar_Net_Win   =    5 * _y + 3 * _x         ;
+_pos_Tar_Net_CK_Num=    _pos_Tar_Net_Win + 50 * _x;
+_pos_Tar_Net       =    _pos_Tar_Net_Win + 5 * _y + 2 * _x ;
+
+_width_Tar_Net_Win =    74                      ;
+_height_Tar_Net_Win=    15                      ;
+_color_Tar_Net_Win =    clBLUE * 16 + clWhite   ;
+
+; --- просмотр списка телефонных номеров
+;
+_pos_Tel_Num_Win   =    0
+_pos_Tel_Num_Count =    _pos_Tel_Num_Win + 56 * _x
+_pos_Tel_Num_Num   =    _pos_Tel_Num_Win + _y + _x
+_pos_Tel_Num_Input =    _pos_Tel_Num_Win + 33 * _y + 45 * _x
+
+Tel_Num_Input		DB	7 DUP(0)	;
+Tel_Num_Input_Len	DB	0        	;
+
+_width_Column      =    26 * _x                 ;
+
+_color_Tel_Num_Win =    cBLUE * 16 + clWhite    ;
+_color_Tel_Num_Hi  =    cBLUE * 16 + clYellow   ;
+
+
+pos_Curr_Tel_Num   DD   0                       ;
+pos_Found_Tel_Num  DD   -1                      ;
+count_Prev_NLOG    DD   0                       ;
+
+_count_Lines_in_Scr=    96
+
+_str_Tel_not_Found DB   'Указанный телефон не найден !', 0
+_str_Tel_Found     DB   'Указанный телефон найден !', 0
+
+; --- окно команд МО ---
+FG_Curr_MO_Num     DW           0               ; флаги окна выбора команд МО
+_spc_press         EQU   0000000000000001b              ; нажат пробел
+_page_down         EQU   0000000000000010b              ; нажат page_down
+_page_up           EQU   0000000000000100b              ; нажат page_up
+_arrows            EQU   0000000000001000b              ; нажата какая-то стрелка: , , , 
+_235_btn           EQU   0000000000010000b              ; нажат выбор 235-ой
+_235_cmd           EQU   0000000000100000b              ; работаем по 235-ой
+_find_cmd          EQU   0000000001000000b              ; для вывода помеченных команд
+_find_numb         EQU   0000000010000000b              ; нашли отмеченную команду
+_clear_MO          EQU   0000000100000000b              ; убрать все команды с контроля данного типа
+_set_all_MO        EQU   0000001000000000b              ; поставить все команды на контроль
+_reset_all_MO      EQU   0000010000000000b              ; убрать все команды с контроля
+_set_sorm_MO       EQU   0000100000000000b              ; поставить команды СОРМ на контроль
+_set_black_MO      EQU   0001000000000000b              ; поставить команды "черного" списка на контроль
+_set_tarif_MO      EQU   0010000000000000b              ; поставить тарификационные команды на контроль
+
+; ----------------------------------------------------------
+frst_dig_MO        =  _pos_Win_Cfg + 2*160 + 2  ;
+dig_cnt_MO         DB   0                       ; счетчик вводимых цифр вместе с ALT
+prev_dig_MO        DB   0
+line_digs_draw     DW      160                  ; кол-во символов в строке
+clmn_digs_draw     DW      12                   ; ширина столбца
+curr_MO            DD      0                    ; тек. выводимая команда МО
+pos_Curr_MO_Num    DW   0                       ; тек. положение номера команды МО
+prev_Curr_MO_Num   DW   160                     ; пред. положение номера команды МО
+num_page_MO        DB   1                       ; номер текущей страницы
+Star_Mo_Win        DB   '*', 0
+Null_MO_Win        DB   ' ', 0
+_help_pge          DB   'Справка', 0
+_addit_MO          DB   'Дополнительно:', 0
+_MO_name           DB   'Список команд МО', 0
+_Bl_dbg_name       DB   'BlackList Debuger', 0
+_Bl_dbg_name_q     DB   'BlackList Debuger quit', 0
+
+Lim_Win_MO         DW   2348                    ; max. значение смещения экрана
+MO_Numb            DB   256 DUP(0)              ; массив для хранения отмеченных кодов команд
+MO_Numb_235        DB   256 DUP(0)              ; массив для хранения отмеченных кодов 235-ой
+SORM_Numb          DB   100, 101, 102, 103, 104, 106, 107, 109, 110, 112 ; массив для хранения команд СОРМ
+                   DB   113, 118, 120, 121, 122, 123, 151, 155, 156, 0
+SORM_Numb_235      DB   16,  18,  100, 101, 102, 103, 111, 0,   0,   0   ; массив для хранения 235-х команд СОРМ
+                   DB   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
+; ---------------------------------------------------------------------
+Black_Numb         DB   100, 101, 102, 103, 104, 117, 118, 169, 0,   0   ; массив для хранения команд "черного" списка
+Black_Numb_235     DB   169, 171, 172, 0,   0,   0,   0,   0,   0,   0   ; массив для хранения 235-х команд "черного" списка
+; ---------------------------------------------------------------------
+Tarif_Numb         DB   124, 125, 126, 127, 128, 129, 130, 133, 134, 135 ; массив для хранения тарификационных команд
+                   DB   141, 142, 152, 155, 156, 169, 0,   0,   0,   0
+Tarif_Numb_235     DB   12,  18,  22,  62,  150, 151, 169, 171, 172, 208 ; массив для хранения 235-х тариф. команд
+                   DB   209, 210, 211, 213, 214, 215, 216, 0,   0,   0
+; ---------------------------------------------------------------------
+curr_MO_ptr        DW   0                       ; указатель для массива
+curr_MO_ptr_235    DW   0                       ; указатель для массива 235-ой
+
+; ---OneLn  --- контроль одной линии
+_pos_OneLn_win  =       34 * _y + 28 * _x               ;
+_pos_OneLn_num  =       _pos_OneLn_win + _y + 15 * _x   ;
+_color_OneLn_win=       clRED * 10h + clYellow          ;
+
+str_OneLn_empty DB      '░░/░░/░░░', 0
+
+_ONELN_MAX      =       7               ; должно быть ровно семь
+OneLn_add_di    DB      2,2,4,2,4,2,2   ; массив введённых цифр
+
+OneLn_count     DB      0               ; счётчик введённых цифр
+OneLn_digits    DB      7 DUP(0)        ; массив введённых цифр
+OneLn_active    DB      0               ; #0 - режим контроля одной линии активен
+OneLn_CK        DB      0               ; номер ЦК контролируемой линии
+OneLn_PhysNum   DW      0               ; полный физический номер контролируемой линии в ЦК
+
+OneLn_running   DB      0               ; #0 - было занятие контролируемой линии, идёт соединение
+                ; --- вызывающая сторона в наблюдении
+OneLn_CkA       DB      0               ;
+OneLn_PhysA     DW      0               ;
+OneLn_WorkA     DW      0               ;
+                ; --- вызываемая сторона в наблюдении
+OneLn_CkB       DB      0               ;
+OneLn_PhysB     DW      0               ;
+OneLn_WorkB     DW      0               ;
+
+; --- контроль ОЗУ коммутации -------------------------------------------------
+_pos_OZUK       =       0
+_color_OZUK     =       cBLUE * 16 + clWHITE
+
+count_OZUK      DW      0
+_COUNT_OZUK_MAX =       128 * 4 + 128 * 2
+
+_x_OZUK1        DW      03 * 2, 15 * 2, 27 * 2, 39 * 2
+_x_OZUK3        DW      52 * 2, 60 * 2, 68 * 2, 76 * 2
+
+OZUK_Step       DB      0
+_OZUK_STEP_MAX  = 10
+
+; --- контроль ТЧ --------------------------------------------------------------
+_pos_TC_KSL     EQU     1 * _y + 21 * _x        ; КСЛ
+_pos_TC_Busy    EQU     1 * _y + 24 * _x        ; флаги зянятых КСЛ
+_pos_TC_Modem   EQU     1 * _y + 27 * _x        ; каналы модемов
+_pos_TC_ComOut  EQU     1 * _y + 30 * _x        ; выходная коммутация
+_pos_TC_ComIn   EQU     1 * _y + 39 * _x        ; входная коммутация
+_pos_TC_Baba    EQU     1 * _y + 48 * _x        ; БАБА
+
+TC_Count        DW      0
+_TC_COM_IN_MAX  EQU     _MAX_KSL * 4            ; DD выходной коммутации
+_TC_COM_OUT_MAX EQU     _MAX_KSL * 4            ; DD входной коммутации
+_TC_BABA_MAX    EQU     30 * 16                 ; 10 раз по три канала БАБЫ: А, Б, А+Б
+_TC_COUNT_MAX   EQU     _TC_COM_IN_MAX + _TC_COM_OUT_MAX + _TC_BABA_MAX
+
+_color_TC       =       cBLUE * 16 + clWHITE
+_pos_TC         =       0
+
+__VAL_3         DD      3
+__VAL_10        DD      10
+__VAL_160       DD      160
+
+TC_Step         DB      0
+_TC_STEP_MAX    =       5
+_DEBUG_SOUND_KSL = 10                           ; следим за первыми 10-тью каналами ТЧ
+__sound_count   DW      0
+__sound_com_out DB      32 * 2 DUP(0h)          ; образ выходной коммутации
+
+; --- контроль плохих пакетов МО -----------------------------------------------
+_BAD_MO_MAX     =       32      ; столько плохих пакетов помним
+_BAD_MO_SIZE    =       32      ; размер буфера в байтах под один плохой пакет
+_BAD_MO_SHL     =       5       ;   тот же размер как степень 2
+bad_MO_count    DB      0       ; количество плохих пакетов
+bad_MO_wr_ptr   DB      0       ; порядковый № след. плохого пакета 0..._BAD_MO_MAX - 1
+        ; смещения относительно начала буфера:
+_BAD_MO_PTR     =       0       ; указателя на ошибочный пакет
+_BAD_MO_TIME    =       1       ; времени - час, минуты, секунды
+_BAD_MO_PACKET  =       4       ; полный пакет МО с ошибочной командой
+bad_MO_buff     DB      _BAD_MO_MAX DUP(_BAD_MO_SIZE DUP(0))
+
+_BAD_MO_SCR_SIZE=       23      ; количество байт ошибочного пакета, выводимых на экран
+_BAD_MO_SCR_BEG =       11 * 2  ; начало ошибочного пакета в строке экрана
+
+_pos_bad_MO     =       0
+_color_bad_MO   =       cBLUE * 16 + clWHITE
+_color_bad_MO_ptr =     cRED  * 16 + clWHITE
+
+char_Space      DB      ' '
+char_GT         DB      '>'
+
+; --- рисовка ДВО --------------------------------------------------------------
+str_no_DVO      DB      '              ', 0
+str_DVO         LABEL   BYTE
+str_CFU         DB      'CFU',   5 DUP(0)
+str_CFB         DB      'CFB',   5 DUP(0)
+str_CFNRY       DB      'CFNRY', 3 DUP(0)
+str_HT          DB      'HT',    6 DUP(0)
+str_OA          DB      'OA',    6 DUP(0)
+str_MA          DB      'MA',    6 DUP(0)
+
+
+; --- проверка тарификации --------------------------
+_color_Check_Tar   =    cMAGNETA * 16 + clWHITE
+_pos_Check_Tar_win =    37 * _y +  20 * _x
+m_Pok_Tar       DB      80h,      01,22h,00,04,   0,0,0,0,    05,06,07, 61h,       0ah,0,0
+                DB      0bh, 81h, 03,12h,34h,56h, 02,78h,90h, 0ffh,     0ffh,0ffh, 0
+m_Pok_Send_Tar  DB      29 DUP(0)
+bCheckTar       DB      0
+
+; --- редактирование длины номера в АТС
+Length_Num_Cpy  DB      0
+
+; --- редактирование тарификационной сети
+LINIY           DW      0
+
+; ввод префиксов и спецслужб
+_pos_Win_Prefix         equ     35 * _y                    ; позиция окна префиксов
+_color_Win_Prefix       equ     cBlue * 10h + clCyan       ; цвет окна
+_color_Win_Pref_Edit    equ     cBlue * 10h + clYellow     ; цвет редактируемого префикса
+
+_PREF_MAX               EQU     3       ; количество префиксов
+_PREF_MG                =       0       ; смещение МГ префикса относительно Prefixes
+_PREF_MN                =       2       ; смещение МН префикса относительно Prefixes
+_PREF_SS                =       4       ; смещение СС префикса относительно Prefixes
+
+_SS_MAX                 EQU     8       ; количество номеров спецслужб на АТС, не более
+
+Pref_Str_Curr           DW      0       ; номер текущей строки ввода
+                        ; --- координаты начала каждой строки ввода
+Pref_Str_Beg            DW      _pos_Win_Prefix + 2 * _y + 41 * _x
+                        DW      _pos_Win_Prefix + 4 * _y + 41 * _x
+                        DW      _pos_Win_Prefix + 6 * _y + 41 * _x
+                        DW      _pos_Win_Prefix + 2 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 3 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 4 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 5 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 6 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 7 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 8 * _y + 74 * _x
+                        DW      _pos_Win_Prefix + 9 * _y + 74 * _x
+                        ; ---
+Pref_Str_Clr            DB      '░░░', 0
+
+; --- выбор команд МО ---
+_color_MO_slct  = clYELLOW * 10 + clWHITE
+_color_MO_stars = clMAGENTA * 10 + clWHITE
+_color_MO_235   = clWHITE * 10 + clWHITE
+; ------ Puma debugger -------
+; ==========-------===========
+Puma_debug_tar label byte
+DB 'Puma counts tar_chl', 0;
+Puma_debug_cto label byte
+DB 'Puma counts cto_chl', 0;
+
+Puma_counts_name        label byte
+DB 'ecsc', 0;
+DB 'ulbc', 0;
+DB 'ulfc', 0;
+DB 'rtpc', 0;
+DB 'rtwc', 0;
+DB 'rtic', 0;
+DB 'rtoc', 0;
+DB 'l14c', 0;
+DB 'l42c', 0;
+DB 't5c ', 0;
+Puma_counts_val         label byte
+DB      '--------', 0
+; -- копии счетчиков статистики ПУМы тарификационного канала
+Puma_cnts_tar   label   byte
+                DB      0
+                DW      9 DUP(0)
+; --- значение timer для каждого сработавшего счетчика тариф. канала
+Puma_tmr_tar    label   DWORD
+                DD      10 DUP(0)
+; -- копии счетчиков статистики ПУМы канала ЦТО
+Puma_cnts_cto   label   byte
+                DB      0
+                DW      9 DUP(0)
+; --- значение timer для каждого сработавшего счетчика канала ЦТО
+Puma_tmr_cto    label   DWORD
+                DD      10 DUP(0)
+; --- Additional PUMA variable ---
+; -- activation others Puma window
+Puma_flg        DB      0
+        _cto_active     EQU 00000001b
+        _conf_active    EQU 00000010b
+
+; -- count for offset PUMA TRANS STRUCTURE
+PUMA_trans_ofs  DD      0
+; -- offset of PUMA-cto Window
+puma_win_ofs    DW      0
+; -- offset of PUMA-cto debug variable
+puma_dbg_ofs    DD      0
+; ------ Conf debugger -------
+; ==========-------===========
+Pak_800E        DW      5 DUP(0)        ; 80.0E buffer
+Pak_808E        DW      5 DUP(0)        ; 80.8E buffer
+tmr_800E        DD      5 DUP(0)        ; 80.0E timer buffer
+tmr_808E        DD      5 DUP(0)        ; 80.8E timer buffer
+res_dbg_Cfg     label   byte
+                DB      'NOK', 0
+                DB      'OK ', 0        ; result of the end conf
+                DB      '   ', 0
+ptr_conf_dbg    DW      0               ; pointer to conf debugger
+
+

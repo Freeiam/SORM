@@ -1,0 +1,8 @@
+ADR_REG_PLIS    EQU     5000h   ;Адрес регистра управления конфигурирования
+ADR_INI_ALTERA  EQU     5001h   ;Адрес регистра типа ALTERA
+C_ERR           DB      0
+LENTH_FILE      DD      0
+BT_COUNT        DD      0
+CONF_ALTERA     DB      0
+_RBF_LEN        EQU     166965
+

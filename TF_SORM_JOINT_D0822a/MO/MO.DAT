@@ -1,0 +1,628 @@
+;********************************************************************************
+;**                     Переменные и константы для МО                          **
+;********************************************************************************
+IF _MSP EQ TRUE
+MO_SLOV         DW      0
+MO_SMESH        DW      0,    800H, 1000H,1800H,2000H,2800H,3000H,3800H
+                DW      4000H,4800H,5000H,5800H,6000H,6800H,7000H,7800H
+MO_SM_BUF       DW      0,    100H, 200H, 300H, 400H, 500H, 600H, 700H
+                DW      800H, 900H,0A00H,0B00H,0C00H,0D00H,0E00H,0F00H
+MO_SM_ACC       DW      0,    800H,1000H,1800H,2000H,2800H,3000H,3800H
+                DW     4000H,4800H,5000H,5800H,6000H,6800H,7000H,7800H
+
+
+
+MO_OUT          EQU     0C800h
+MO_IN           EQU     0C900h
+MO_MODE         EQU     3424h
+MO_LEN          EQU     3425h
+MO_STAT         EQU     3426h
+KL_MOD          EQU     1
+Acc_Ptr         DW      KL_MOD  DUP(0)       ; указатель на нач. своб. места в накопителе
+ELSE
+MO_OUT          EQU     04800h
+MO_IN           EQU     04900h
+MO_MODE         EQU     04406h
+MO_LEN          EQU     04407h
+MO_STAT         EQU     04408h
+Acc_Ptr         DW      0       ; указатель на нач. своб. места в накопителе
+ENDIF
+MO_FLG          DB      0
+
+; ---- кодировка ---- MVT перенёс
+MO_RM_FLAG      DB      00000000b   ; флаг для установки кодировки на модеме(0 - HDB3)
+HDB3_TIME       DD      0           ; время установки кодировки
+; /MVT
+MO_Supply       DW      0       ; состояние ИП
+IF _MSP EQ TRUE
+MO_TOut         DW      KL_MOD  DUP(3000)    ; тайм-аут модема
+MO_Time         DW      KL_MOD  DUP(0)       ; время последнего приема МО
+MO_Idx          DW      KL_MOD  DUP(6)       ; индекс МО
+MO_RM           DW      KL_MOD  DUP(10h)     ; копия регистра режима модема
+
+MO_Err          DW      KL_MOD  DUP(0)       ; счетчик ошибок МО
+MO_Num          DW      KL_MOD  DUP(0)       ; номер пакета МО
+MO_NumInc       DW      KL_MOD  DUP(0)       ; байт коррекции номера переспрашиваемого пакета
+MO_Ptr          DW      KL_MOD  DUP(2)       ; указатель на конец команды в MO_BufIn
+MO_Len2         DW      KL_MOD  DUP(0)       ; копия длины принятого пакета МО
+OSH_T_O         DW      KL_MOD  DUP(0)
+OSH_VX_P        DW      KL_MOD  DUP(0)
+OSH_GOT         DW      KL_MOD  DUP(0)
+OSH_PAK         DW      KL_MOD  DUP(0)
+
+
+Acc             DB      KL_MOD  DUP(2048 DUP(0)) ; накопитель МО
+MO_BufIn        DB      KL_MOD  DUP(256 DUP(0))      ; буфер приема МО
+
+MO_BufOut       DB      KL_MOD  DUP(256 DUP(0))      ; буфер передачи МО
+ELSE
+MO_TOut         DD      500 * 2;3;;; * 2         ; тайм-аут модема MVT сделал величину таймаута
+MO_Time         DD      0
+MO_Idx          DW      6       ; index MO
+MO_RM           DB      10h;90h ; манчестер для нового RBF; 10h
+
+MO_Err          DB      0       ; счетчик ошибок МО
+MO_Num          DB      0       ; номер пакета МО
+MO_NumInc       DB      0       ; байт коррекции номера переспрашиваемого пакета
+MO_Ptr          DW      2       ; указатель на конец команды в MO_BufIn
+MO_Len2         DW      0       ; копия длины принятого пакета МО
+OSH_T_O         DB      0
+OSH_VX_P        DB      0
+OSH_GOT         DB      0
+OSH_PAK         DB      0
+
+Acc             DB      2048 DUP(0) ; накопитель МО
+
+MO_BufIn        DB      256  DUP(0) ; буфер приема МО
+MO_BufOut       DB      256  DUP(0) ; буфер передачи МО
+ENDIF
+NACH_ADR_MO			DW	0
+MO_LINK         DW      OFFSET MO0
+                DW      OFFSET MO1
+                DW      OFFSET MO2
+                DW      OFFSET MO3
+                DW      OFFSET MO4
+                DW      OFFSET MO5
+                DW      OFFSET MO6
+                DW      OFFSET MO0
+
+MO_COM          DW      OFFSET MO_0
+                DW      OFFSET MO_1
+                DW      OFFSET MO_2
+                DW      OFFSET MO_3
+                DW      OFFSET MO_4
+                DW      OFFSET MO_5
+                DW      OFFSET MO_6
+                DW      OFFSET MO_7
+                DW      OFFSET MO_8
+                DW      OFFSET MO_9
+                DW      OFFSET MO_10
+                DW      OFFSET MO_11
+                DW      OFFSET MO_12
+                DW      OFFSET MO_13
+                DW      OFFSET MO_14
+                DW      OFFSET MO_15
+                DW      OFFSET MO_16
+                DW      OFFSET MO_17
+                DW      OFFSET MO_18
+                DW      OFFSET MO_19
+                DW      OFFSET MO_20
+                DW      OFFSET MO_21
+                DW      OFFSET MO_22
+                DW      OFFSET MO_23
+                DW      OFFSET MO_24
+                DW      OFFSET MO_25
+                DW      OFFSET MO_26
+                DW      OFFSET MO_27
+                DW      OFFSET MO_28
+                DW      OFFSET MO_29
+                DW      OFFSET MO_30
+                DW      OFFSET MO_31
+                DW      OFFSET MO_32
+                DW      OFFSET MO_33
+                DW      OFFSET MO_34
+                DW      OFFSET MO_35
+                DW      OFFSET MO_36
+                DW      OFFSET MO_37
+                DW      OFFSET MO_38
+                DW      OFFSET MO_39
+                DW      OFFSET MO_40
+                DW      OFFSET MO_41
+                DW      OFFSET MO_42
+                DW      OFFSET MO_43
+                DW      OFFSET MO_44
+                DW      OFFSET MO_45
+                DW      OFFSET MO_46
+                DW      OFFSET MO_47
+                DW      OFFSET MO_48
+                DW      OFFSET MO_49
+                DW      OFFSET MO_50
+                DW      OFFSET MO_51
+                DW      OFFSET MO_52
+                DW      OFFSET MO_53
+                DW      OFFSET MO_54
+                DW      OFFSET MO_55
+                DW      OFFSET MO_56
+                DW      OFFSET MO_57
+                DW      OFFSET MO_58
+                DW      OFFSET MO_59
+                DW      OFFSET MO_60
+                DW      OFFSET MO_61
+                DW      OFFSET MO_62
+                DW      OFFSET MO_63
+                DW      OFFSET MO_64
+                DW      OFFSET MO_65
+                DW      OFFSET MO_66
+                DW      OFFSET MO_67
+                DW      OFFSET MO_68
+                DW      OFFSET MO_69
+                DW      OFFSET MO_70
+                DW      OFFSET MO_71
+                DW      OFFSET MO_72
+                DW      OFFSET MO_73
+                DW      OFFSET MO_74
+                DW      OFFSET MO_75
+                DW      OFFSET MO_76
+                DW      OFFSET MO_77
+                DW      OFFSET MO_78
+                DW      OFFSET MO_79
+                DW      OFFSET MO_80
+                DW      OFFSET MO_81
+                DW      OFFSET MO_82
+                DW      OFFSET MO_83
+                DW      OFFSET MO_84
+                DW      OFFSET MO_85
+                DW      OFFSET MO_86
+                DW      OFFSET MO_87
+                DW      OFFSET MO_88
+                DW      OFFSET MO_89
+                DW      OFFSET MO_90
+                DW      OFFSET MO_91
+                DW      OFFSET MO_92
+                DW      OFFSET MO_93
+                DW      OFFSET MO_94
+                DW      OFFSET MO_95
+                DW      OFFSET MO_96
+                DW      OFFSET MO_97
+                DW      OFFSET MO_98
+                DW      OFFSET MO_99
+                DW      OFFSET MO_100
+                DW      OFFSET MO_101
+                DW      OFFSET MO_102
+                DW      OFFSET MO_103
+                DW      OFFSET MO_104
+                DW      OFFSET MO_105
+                DW      OFFSET MO_106
+                DW      OFFSET MO_107
+                DW      OFFSET MO_108
+                DW      OFFSET MO_109
+                DW      OFFSET MO_110
+                DW      OFFSET MO_111
+                DW      OFFSET MO_112
+                DW      OFFSET MO_113
+                DW      OFFSET MO_114
+                DW      OFFSET MO_115
+                DW      OFFSET MO_116
+                DW      OFFSET MO_117
+                DW      OFFSET MO_118
+                DW      OFFSET MO_119
+                DW      OFFSET MO_120
+                DW      OFFSET MO_121
+                DW      OFFSET MO_122
+                DW      OFFSET MO_123
+                DW      OFFSET MO_124
+                DW      OFFSET MO_125
+                DW      OFFSET MO_126
+                DW      OFFSET MO_127
+                DW      OFFSET MO_128
+                DW      OFFSET MO_129
+                DW      OFFSET MO_130
+                DW      OFFSET MO_131
+                DW      OFFSET MO_132
+                DW      OFFSET MO_133
+                DW      OFFSET MO_134
+                DW      OFFSET MO_135
+                DW      OFFSET MO_136
+                DW      OFFSET MO_137
+                DW      OFFSET MO_138
+                DW      OFFSET MO_139
+                DW      OFFSET MO_140
+                DW      OFFSET MO_141
+                DW      OFFSET MO_142
+                DW      OFFSET MO_143
+                DW      OFFSET MO_144
+                DW      OFFSET MO_145
+                DW      OFFSET MO_146
+                DW      OFFSET MO_147
+                DW      OFFSET MO_148
+                DW      OFFSET MO_149
+                DW      OFFSET MO_150
+                DW      OFFSET MO_151
+                DW      OFFSET MO_152
+                DW      OFFSET MO_153
+                DW      OFFSET MO_154
+                DW      OFFSET MO_155
+                DW      OFFSET MO_156
+                DW      OFFSET MO_157
+                DW      OFFSET MO_158
+                DW      OFFSET MO_159
+                DW      OFFSET MO_160
+                DW      OFFSET MO_161
+                DW      OFFSET MO_162
+                DW      OFFSET MO_163
+                DW      OFFSET MO_164
+                DW      OFFSET MO_165
+                DW      OFFSET MO_166
+                DW      OFFSET MO_167
+                DW      OFFSET MO_168
+                DW      OFFSET MO_169
+                DW      OFFSET MO_170
+                DW      OFFSET MO_171
+                DW      OFFSET MO_172
+                DW      OFFSET MO_173
+                DW      OFFSET MO_174
+                DW      OFFSET MO_175
+                DW      OFFSET MO_176
+                DW      OFFSET MO_177
+                DW      OFFSET MO_178
+                DW      OFFSET MO_179
+                DW      OFFSET MO_180
+                DW      OFFSET MO_181
+                DW      OFFSET MO_182
+                DW      OFFSET MO_183
+                DW      OFFSET MO_184
+                DW      OFFSET MO_185
+                DW      OFFSET MO_186
+                DW      OFFSET MO_187
+                DW      OFFSET MO_188
+                DW      OFFSET MO_189
+                DW      OFFSET MO_190
+                DW      OFFSET MO_191
+                DW      OFFSET MO_192
+                DW      OFFSET MO_193
+                DW      OFFSET MO_194
+                DW      OFFSET MO_195
+                DW      OFFSET MO_196
+                DW      OFFSET MO_197
+                DW      OFFSET MO_198
+                DW      OFFSET MO_199
+                DW      OFFSET MO_200
+                DW      OFFSET MO_201
+                DW      OFFSET MO_202
+                DW      OFFSET MO_203
+                DW      OFFSET MO_204
+                DW      OFFSET MO_205
+                DW      OFFSET MO_206
+                DW      OFFSET MO_207
+                DW      OFFSET MO_208
+                DW      OFFSET MO_209
+                DW      OFFSET MO_210
+                DW      OFFSET MO_211
+                DW      OFFSET MO_212
+                DW      OFFSET MO_213
+                DW      OFFSET MO_214
+                DW      OFFSET MO_215
+                DW      OFFSET MO_216
+                DW      OFFSET MO_217
+                DW      OFFSET MO_218
+                DW      OFFSET MO_219
+                DW      OFFSET MO_220
+                DW      OFFSET MO_221
+                DW      OFFSET MO_222
+                DW      OFFSET MO_223
+                DW      OFFSET MO_224
+                DW      OFFSET MO_225
+                DW      OFFSET MO_226
+                DW      OFFSET MO_227
+                DW      OFFSET MO_228
+                DW      OFFSET MO_229
+                DW      OFFSET MO_230
+                DW      OFFSET MO_231
+                DW      OFFSET MO_232
+                DW      OFFSET MO_233
+                DW      OFFSET MO_234
+                DW      OFFSET MO_235
+                DW      OFFSET MO_236
+                DW      OFFSET MO_237
+                DW      OFFSET MO_238
+                DW      OFFSET MO_239
+                DW      OFFSET MO_240
+                DW      OFFSET MO_241
+                DW      OFFSET MO_242
+                DW      OFFSET MO_243
+                DW      OFFSET MO_244
+                DW      OFFSET MO_245
+                DW      OFFSET MO_246
+                DW      OFFSET MO_247
+                DW      OFFSET MO_248
+                DW      OFFSET MO_249
+                DW      OFFSET MO_250
+                DW      OFFSET MO_251
+                DW      OFFSET MO_252
+                DW      OFFSET MO_253
+                DW      OFFSET MO_254
+                DW      OFFSET MO_255
+
+;<Yu> >>> переменные для преобразования типов разговоров МО в типы СИДС <<<<<<<
+Is_Call_Num     DB      0               ; =0 - нет № соединения, #0 - № соединения получен
+Call_Ptr        DD      0               ; указатель на соединение
+No_Call_Count   DD      0               ; счётчик "необнаружений" соединений
+
+                ; --- константы типов сообщений о несостоявшихся соединениях
+fc_ATS_FLAG     EQU     080h            ; признак что место аварии АТС и/или отказ на АТС
+
+fc_UNKNOWN      EQU     0               ; неизвестная причина непрохождения
+fc_B_BUSY       EQU     1               ; вызываемый занят
+fc_NO_B_ANS     EQU     2               ; вызываемый не отвечает
+fc_ATS_FAIL     EQU     3               ; внутренний сбой
+fc_CK_OVERLOAD  EQU     4               ; внутренняя перегрузка
+fc_ATS_NO_PATH  EQU     5               ; неверная маршрутизация АТС
+fc_NOT_FULL     EQU     6               ; неполный №
+fc_SL_OVERLOAD  EQU     7               ; внутренняя перегрузка
+fc_ATS_NOT_USED EQU     8               ; перегрузка СЛ
+fc_IN_BLACK     EQU     9               ; абонент в "чёрном" списке
+                                        ; --- пока нет
+fc_TEMP_OFF     EQU     10              ; абонент временно не подключен
+fc_INCALL_OFF   EQU     11              ; запрет входящей связи абонента
+                                        ; ---
+fc_NET_FAIL     EQU     12              ; сбой сети
+fc_NET_OVERLOAD EQU     13              ; перегрузка сети
+fc_NET_NOT_USED EQU     14              ; неиспользуемый номер сети
+fc_NET_NO_PATH  EQU     15              ; неверная маршрутизация сети
+
+fc_BAD_ANI      EQU     16              ; неверный АОН
+fc_DVO          EQU     17              ; ДВО
+fc_CRACK_PASS   EQU     18              ; взлом пароля
+fc_WHITE_LIST   EQU     19              ; отбой по "белому списку"
+
+                ; --- коды отказов, получаемые от сети
+net_NOT_USED    EQU     0000001b        ; неиспользуемый номер
+net_NO_PATH     EQU     0000011b        ; отсутсвие пути к пункту назначения
+net_NORMAL_CLEAR EQU    0010000b        ; нормальный отбой
+net_NO_ANS      EQU     0010011b        ; вызываемый не отвечает
+net_B_BUSY      EQU     0010001b        ; вызываемый занят
+net_UNSPEC      EQU     0011111b        ; нормальный неопределённый отбой
+net_OVERLOAD    EQU     0101010b        ; перегрузка коммутационного устройства
+
+; === переменные и константы для обслуживания соединений =======================
+;
+; --- константы для ЦК
+_CK_MAX         =       KL_TIS          ; max номер ЦК в АТС
+; --- константы для рабочих номеров
+_WORK_NUM_MAX   =       2048            ; max допустимый рабочий № на ЦК
+_WORK_NUM_SHL   =       11              ; битовый размер рабочего номера на ЦК
+; --- константы для физических номеров
+_PHYS_NUM_MAX   =       8192            ; max допустимый физический № на ЦК
+_PHYS_NUM_SHL   =       13              ; битовый размер физического номера на ЦК
+
+; --- сам SOED
+SOED_Struc      STRUC
+                ; ---
+attr_a          DB      0               ; 00      - признак номера A
+len_a           DB      0               ; 01      - количество цифр в номере А
+num_a           DB      9 DUP(0)        ; 02 - 10 - номер А
+ck_a            DB      0               ; 11
+work_a          DW      0               ; 12 - 13
+phys_a          DW      0               ; 14 - 15
+                ; ---
+attr_b          DB      0               ; 16      - признак номера Б
+len_b           DB      0               ; 17      - количество цифр в номере Б на данный момент
+num_b           DB      9 DUP(0)        ; 18 - 26 - сами цифры в номере Б на данный момент
+ck_b            DB      0               ; 27
+work_b          DW      0               ; 28 - 29
+phys_b          DW      0               ; 30 - 31
+                ; ---
+attr_c          DB      0               ; 32      - признак номера C
+len_c           DB      0               ; 33      - количество цифр в номере C
+num_c           DB      9 DUP(0)        ; 34 - 42 - номер C
+                ; ---
+soed_flags      DD      0               ; 43 - 46
+                ; --- 1. указатель на сессию по исходящему пучку
+bunch_a_ptr     DW      0               ; 47 - 48
+                ; --- 2. указатель на сессию по входящему пучку
+bunch_b_ptr     DW      0               ; 49 - 50
+                ; --- 3. указатель на сессию по номеру вызывающего как он получен
+calling_ptr     DW      0               ; 51 - 52
+                ; --- 4. указатель на сессию по короткому номеру вызывающего (без кода зоны)
+calling_short_ptr DW    0               ; 53 - 54
+                ; --- 5. указатель на сессию по номеру вызываемого как он получен
+called_ptr      DW      0               ; 55 - 56
+                ; --- 6. указатель на сессию по короткому номеру вызываемого (без кода зоны)
+called_short_ptr DW     0               ; 57 - 58
+                ; --- 7. указатель на сессию по номеру вызываемого без МГ или МН префикса
+called_mg_ptr   DW      0               ; 59 - 60
+                ; --- 8. указатель на сессию по номеру переадресации
+ra_ptr          DW      0               ; 61 - 62
+                ; --- 9. указатель на сессию по номеру переадресации без МГ или МН префикса
+ra_mg_ptr       DW      0               ; 63 - 64
+                ; --- 10. указатель на сессию по исходящему пучку при переадресации
+bunch_ra_ptr    DW      0               ; 65 - 66
+                ; *** УПАТС *****
+                ; --- 11. указатель на сессию по вызывающему № УПАТС на вызываемый № УПАТС
+upats_ab_ptr    DW      0               ; 67 - 68
+                ; --- 12. указатель на сессию по вызываемому № УПАТС с вызывающего № УПАТС
+upats_ba_ptr    DW      0               ; 69 - 70
+                ; --- 13. указатель на сессию по вызываемому № УПАТС с вызывающего
+Ub_calling_ptr  DW      0               ; 71 - 72
+                ; --- 14. указатель на сессию по вызывающему № УПАТС на вызываемый
+Ua_called_ptr   DW      0               ; 73 - 74
+                ; --- 15. указатель на сессию по вызываемому с вызывающего № УПАТС
+called_Ua_ptr   DW      0               ; 75 - 76
+                ; --- 16. указатель на сессию по вызываемому без МГ или МН префикса с вызывающего № УПАТС
+called_mg_Ua_ptr DW     0               ; 77 - 78
+                ; --- 17. указатель на сессию по вызыающему на вызываемый № УПАТС
+calling_Ub_ptr   DW     0               ; 79 - 80
+                ; --- 18. указатель на сессию по вызываемому №С с вызывающего УПАТС(Ra)
+called_Ua_Nc_ra_ptr DW     0            ; 81 - 82
+                ; --- 19  указатель на сессию по вызываемому №С(УПАТС) с вызывающего(Ra)
+Uc_calling_ra_ptr  DW      0            ; 83 - 84
+                ; --- 20 указатель на сессию по вызываемому №С(УПАТС) с вызывающего УПАТС(Ra)
+upats_ca_ra_ptr DW      0               ; 85 - 86
+                ; ---
+                ; *** УПАТС *****
+upats_a_num     DW      0               ; 83 - 84
+upats_a         DB      0               ; 85
+upats_b_num     DW      0               ; 86 - 87
+upats_b         DB      0               ; 88
+                ; ---
+ck_ra           DB      0               ; 89
+work_ra         DW      0               ; 90 - 91
+phys_ra         DW      0               ; 92 - 93
+                ; ---
+dvo_code        DB      0               ; 94
+dvo_phase_code  DB      0               ; 95
+                ; ---
+ln_cause        DB      0               ; 96
+ln_place        DB      0               ; 97
+ck_cause        DB      0               ; 98
+tcop_dig        DB      0FFh            ; 99      цифра выхода в ТСОП для УПАТС
+                ; ---
+cat_dig         DB      0FFh            ; 100      категория абонента
+        ; --------END_SOED---------
+SOED_Struc      ENDS
+
+; --- константы для работы с SOED
+_SOED_SIZE      =       size SOED_Struc ; размер одной записи в SOED в байтах
+_SOED_MAX       =       16384           ;
+_SOED_LAST      =       _SOED_MAX * _SOED_SIZE ;
+_SOED_SESSIONs  =       20              ; max сессий, связанных с одним соединением
+_Sess_RA_MAX    =       4               ; max сессий для №С при переадресации
+
+MO_CK           DB      0               ; врем. буфер под ЦКа в МО_100 и ЦКб в МО_112
+MO_Phys         DW      0               ; врем. буфер под № физ. в 235/214-215
+; --- флаги, используемые в SOED
+sf_SZR          EQU     00000001h       ; флаг "занятие"
+sf_ANI          EQU     00000002h       ; флаг "АОН"
+sf_NUM_FULL     EQU     00000004h       ; флаг "завершение набора"
+sf_BLK_B        EQU     00000008h       ; флаг "проключение" (выход на блок Б)
+sf_ANS          EQU     00000010h       ; флаг "ответ"
+sf_REL          EQU     00000020h       ; флаг "отбой"
+
+sf_BUSY         EQU     00000040h       ; флаг "вызываемый занят"
+
+sf_A_FREE       EQU     00000080h       ; флаг "освобождение вызывающей линии"
+sf_B_FREE       EQU     00000100h       ; флаг "освобождение вызываемой линии"
+sf_A_FAIL       EQU     00000200h       ; флаг "сбой вызывающей линии"
+sf_B_FAIL       EQU     00000400h       ; флаг "сбой вызываемой линии"
+sf_CK_FAIL      EQU     00000800h       ; флаг "отказ от ЦК" (235 / 62)
+
+sf_MG           EQU     00001000h       ; флаг междугороднего занятия
+
+sf_RA           EQU     00002000h       ; флаг срабатывания переадресации
+
+sf_BLACK_DENY   EQU     00004000h       ; флаг срабатывания чёрного списка
+sf_FAIL_OUT     EQU     00008000h       ; флаг отправки неуда
+
+sf_IP_A         EQU     00010000h       ; соединение с IP (МО100)
+sf_IP_B         EQU     00020000h       ; соединение с IP (MO112)
+sf_IP           EQU     sf_IP_B         ; IP соединение определяем по 112 команде
+sf_DVO_SR       EQU     00040000h       ; set / reset DVO - переадресация, горячий, будильники
+sf_RA_SR        EQU     00040000h       ; RA set / reset
+sf_UPATS_A      EQU     00080000h       ; абонент УПАТС А
+sf_UPATS_B      EQU     00100000h       ; абонент УПАТС Б
+sf_CALL_UPATS   EQU     00200000h       ; вызов абонента УПАТС
+sf_RA_UPATS_C   EQU     00400000h       ; номер С при переадресации имеет номер в УПАТС
+;;;sf_NA_sess      EQU     00800000h       ; флаг формирования сессиий по №А город.[06/06/13]
+sf_2VSK_Chelnok EQU     00800000h       ;<- {Paul.N - add - 17/07/17} - флаг, когда СОРМ рабоает без АОНа(МО118)
+                ; --- СОРМовские флаги соединения
+sf_SORM_CALLED  EQU     01000000h       ; была попытка отправить СОРМ полный
+sf_UPATS_CALLED EQU     02000000h       ; была попытка отправить СОРМ полный для УПАТС
+sf_MN_rostov    EQU     04000000h       ; код отбоя для международных вызовов(Ростов!)
+sf_NO_ANS       EQU     08000000h       ; код не ответ (04)
+sf_incmplt_REL  EQU     10000000h       ; флаг формирования комплекта сообщений 4.3(СОРМ) - неполн.набор
+; --- рабочие переменные ----------------------------------------------------------------
+SOED_Next       DD      0               ;
+
+; --- статистика - счётчики ошибок ------------------------------------------------------
+SOED_Busy_Err   DD      0               ; счётчик "зависших" SOED"ов
+SOED_Full_Err   DD      0               ; счётчик ситуаций, когда в SOED не найденно свободных мест
+SOED_no_Ref_Err DD      0               ; по рабочему номеру не найдена ссылка на SOED
+SOED_Ref_A_Err  DD      0               ; рабочий № команды и рабочий № А в SOED не совпадают
+SOED_Ref_AB_Err DD      0               ; раб. № команды не совпадает ни с № А ни с № Б в SOED
+
+
+; -------------- временно перенесено из конфигурации
+    ; переменные для преобразования типов разговоров МО в типы СИДС
+                ; === ФИКСИРОВАННЫЕ ПРЕФИКСЫ
+                ; --- префикс для определения спецслужб для № Б
+PREF_B_SS       DB      000h            ; префикс спецслужбы
+PREF_B_SS_MASK  DB      00fh            ; и его маска
+                ; --- МГ и МН префиксы для № Б
+PREF_B_MG       DW      00008h          ; префикс выхода на АМТС   - для номера Б только
+PREF_B_MG_MASK  DW      0000fh          ; маска для выделения префикса МГ из № Б
+PREF_B_MN       DW      00018h          ; префикс для выхода на МН - для номера Б только
+PREF_B_MN_MASK  DW      00fffh          ; маска для выделения префикса МН из № Б
+                ; === ВЫЧИСЛЯЕМЫЕ ПРЕФИКСЫ
+                ; --- префиксы ЗОНЫ для № Б - полный и короткий
+PREF_B_FULL     DD      0               ;
+        ; LENGTH_NUM    0  1  2  3  4  5         6        7
+PREF_B_FULL_MASK DD     0, 0, 0, 0, 0, 0ffffffh, 0fffffh, 0ffffh
+PREF_B_ZN       DW      0               ; префикс зоны (собственный префикс АТС)
+PREF_B_ZN_MASK  DW      0ffffh          ; маска для выделения короткого префикса зоны
+
+
+                ; === ПОЛУЧАЕМЫЕ ПРЕФИКСЫ
+                ; --- префиксы для № А
+PREF_A_FULL     DD      0               ; префикс, переданный ЦК, после перекодировки его в СОРМ
+        ; LENGTH_NUM    0  1  2  3  4  5           6           7
+PREF_A_FULL_MASK DD     0, 0, 0, 0, 0, 0fffffh,    0ffffh,     0fffh
+PREF_A_FULL_OR   DD     0, 0, 0, 0, 0, 0fff00000h, 0ff000000h, 0f0000000h
+PREF_A_FULL_SHR DB      0, 0, 0, 0, 0, 12,         8,          4
+PREF_A_FULL_LEN DB      0, 0, 0, 0, 0, 5,          4,          3
+PREF_A_ZN       DW      0               ; первые 3 цифры PREFIX_FULL (префикс зоны для № А)
+PREF_A_ZN_MASK  DW      0fffh           ; маска для выделения короткого префикса зоны
+
+;LENGTH_NUM     =       0  1  2  3  4  5           6           7
+ANI7_Mask       DD      0, 0, 0, 0, 0, 0fff00000h, 0ff000000h, 0f0000000h
+ANI7_Shift      DB      0, 0, 0, 0, 0, 8,          4,          0
+
+; Obj_Num_Len   =       0  1           2           3           4           5           6           7           8           9           10          11          12          13          14          15          16    17    18
+Obj_Num_Mask_1	DD      0, 0fffffff0h, 0ffffff00h, 0fffff000h, 0ffff0000h, 0fff00000h, 0ff000000h, 0f0000000h, 0,          0,          0,          0,          0,          0,          0,          0,          0,    0,    0
+Obj_Num_Mask_2	DD      0, 0ffffffffh, 0ffffffffh, 0ffffffffh, 0ffffffffh, 0ffffffffh, 0ffffffffh, 0ffffffffh, 0ffffffffh, 0fffffff0h, 0ffffff00h, 0fffff000h, 0ffff0000h, 0fff00000h, 0ff000000h, 0f0000000h, 0,    0,    0
+Obj_Num_Mask_3	DB      0, 0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh,       0ffh, 0f0h, 0
+
+; ------------
+; переадресация
+RA_MASK         EQU     3
+RA_codes        DB      CFU, CFNRY, CFB, CF
+RA_MO_codes     DB      97,  99,    98,  0
+
+
+; буфера для временного хранения номеров А и С
+Num_A_tmp_buff  DB      10 DUP(0)
+Num_C_tmp_buff  DB      10 DUP(0)
+
+; --- <Yu> [08.05.2010] - защита от двойной переадресации
+_DBL_RA_MAX     =       32      ; max 32 переадресации одновременно
+                ; буфер под номера на которые переадресация
+Dbl_RA_Buff     DD      _DBL_RA_MAX DUP(0ffffffffh) ;\ Nc
+Dbl_RA_Buff_2   DD      _DBL_RA_MAX DUP(0ffffffffh) ;/
+Dbl_RA_Buff_B1  DD      _DBL_RA_MAX DUP(0ffffffffh) ;\ Nb
+Dbl_RA_Buff_B2  DD      _DBL_RA_MAX DUP(0ffffffffh) ;/
+Dbl_RA_Buff_A1  DD      _DBL_RA_MAX DUP(0ffffffffh) ;\ Na
+Dbl_RA_Buff_A2  DD      _DBL_RA_MAX DUP(0ffffffffh) ;/
+Dbl_RA_Buff_DVO DD      _DBL_RA_MAX DUP(0ffffffffh) ;
+; --- <Yu> [08.05.2010] - защита от двойной переадресации
+
+; --- логирование чёрного списка ----------------------------------------------
+BL_Return_Code  DB      0               ; код возврата из Black_List и Black_List_In
+_BL_MIN_CMD     EQU     100             ; 100 - min код для логируемых команд
+_BL_MAX_CMD     EQU     169             ; 169 - max код для логируемых команд
+_BL_LEN_OOFFS   EQU     4               ; смещение байта длины от начала 102-ой и 118-ой команд
+
+; --- флаг для отладки --------------------------
+FG_Debug        db      0
+_debug_line     equ     01b
+
+ ; Служебный набор флагов - №1
+FG_Duty1        DB      0
+_fg_wt_new      EQU     00000001b       ; отбой от ОКС-7 по "белому списку"
+_test_sorm      EQU     00000010b       ; проверка СОРМ
+
+; флаг нового черного списка
+FG_Black_New    DB      0
+_fg_bl_new      EQU     00000001b
+_fg_bl_and_new  EQU     11111110b
+
+
+

@@ -1,0 +1,128 @@
+_EXC32  equ     FALSE ;TRUE ;FALSE
+
+if _EXC32 eq TRUE
+_exc_max_stolb  equ     4
+_exc_smesh_stolb equ    9*_x
+else
+_exc_max_stolb  equ     6
+_exc_smesh_stolb equ    5*_x
+endif
+_exc_max_line   equ     6
+_exc_max_stack  equ     _exc_max_stolb * _exc_max_line
+
+
+exception_data  STRUC
+ereg_eax        DD      0       ;\
+ereg_ebx        DD      0       ;|
+ereg_ecx        DD      0       ;|
+ereg_edx        DD      0       ;|  32 bytes
+ereg_esi        DD      0       ;|
+ereg_edi        DD      0       ;|
+ereg_ebp        DD      0       ;|
+ereg_esp        DD      0       ;/
+
+ereg_cs         DW      0       ;\
+ereg_ds         DW      0       ;|
+ereg_es         DW      0       ;|
+ereg_fs         DW      0       ;|  12 bytes
+ereg_gs         DW      0       ;|
+ereg_ss         DW      0       ;/
+
+ereg_eip        DD      0       ;\
+ereg_flg        DD      0       ;|  13 bytes                 === 57 bytes
+ereg_kod        DD      0       ;|
+ereg_number     DB      0       ;/
+
+ereg_count      DW      0
+trace_code      DD      0
+
+if _EXC32 eq TRUE
+ereg_stack      DD      _exc_max_stack DUP (0)
+else
+ereg_stack      DW      _exc_max_stack DUP (0)
+endif
+
+exception_data  ENDS
+
+time_reboot     DW      0
+_time_reboot    equ     5000
+
+ereg_reboot     DB      0
+;_ereg_reboot    equ     _exc_max_line*_y + _ereg_stack     ;  cm
+_ereg_max_reeboot equ   35
+
+_exception_data_b       = $
+ex              exception_data <>
+_exception_data_l       = $ - _exception_data_b
+
+_ereg_win       equ     2*160;_y
+_ereg_eax       equ     _ereg_win + 1*_y + 7*_x
+_ereg_ebx       equ     _ereg_win + 2*_y + 7*_x
+_ereg_ecx       equ     _ereg_win + 3*_y + 7*_x
+_ereg_edx       equ     _ereg_win + 4*_y + 7*_x
+_ereg_esi       equ     _ereg_win + 1*_y + 26*_x
+_ereg_edi       equ     _ereg_win + 2*_y + 26*_x
+_ereg_ebp       equ     _ereg_win + 3*_y + 26*_x
+_ereg_esp       equ     _ereg_win + 4*_y + 26*_x
+
+_ereg_cs        equ     _ereg_win + 6*_y + 6*_x
+_ereg_ds        equ     _ereg_win + 6*_y + 18*_x
+_ereg_es        equ     _ereg_win + 7*_y + 6*_x
+_ereg_fs        equ     _ereg_win + 7*_y + 18*_x
+_ereg_gs        equ     _ereg_win + 7*_y + 30*_x
+_ereg_ss        equ     _ereg_win + 6*_y + 30*_x
+
+_ereg_eip       equ     _ereg_win + 5*_y + 7*_x
+_ereg_flg       equ     _ereg_win + 5*_y + 26*_x
+_ereg_kod       equ     _ereg_win + 8*_y + 24*_x
+_ereg_number    equ     _ereg_win + 8*_y + 10*_x
+_ereg_trace     equ     _ereg_win + 9*_y + 13*_x
+
+_ereg_stack     equ     _ereg_win + 11*_y + 1*_x
+_ereg_reboot    equ     _exc_max_line*_y + _ereg_stack
+
+exc_window      label   byte
+                    DB 'ÚÄÄÄÄÄ ˆáª«îç¨â¥«ì­ ï á¨âã æ¨ï ÄÄÄÄÄ¿',0 ;   0
+                    DB '³ EAX: ........h     ESI: ........h ³',0 ;   1
+                    DB '³ EBX: ........h     EDI: ........h ³',0 ;   2
+                    DB '³ ECX: ........h     EBP: ........h ³',0 ;   3
+                    DB '³ EDX: ........h     ESP: ........h ³',0 ;   4
+                    DB '³ EIP: ........h  EFLAGS: ........h ³',0 ;   5
+                    DB '³ CS: ....h   DS: ....h   SS: ....h ³',0 ;   6
+                    DB '³ ES: ....h   FS: ....h   GS: ....h ³',0 ;   7
+                    DB '³    ˆ.‘. ..   ERRCODE: ........h   ³',0 ;   8
+                    DB '³ TRACECODE: ........h  ........h   ³',0 ;   9
+                    DB 'ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄ stack ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´',0 ;   10
+if _EXC32 eq true
+exc_window_stack    DB '³........ ........ ........ ........³',0 ;  11
+else
+exc_window_stack    DB '³.... .... .... .... .... .... .... ³',0 ;  12
+endif
+exc_window_stack_e  DB 'ÀÄÄ ¯à®¡¥« -> ¯¥à¥§ £àã§ª  ¡«®ª  ÄÄÄÙ',0 ;  17
+                     ;            1         2         3
+                     ;  0123456789012345678901234567890123456
+;
+;
+;
+;
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
